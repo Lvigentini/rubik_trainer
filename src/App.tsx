@@ -1,4 +1,4 @@
-import { Award, BookOpen, Camera, CheckCircle2, Info, RotateCcw, Shuffle, Sparkles, Timer, Wand2 } from 'lucide-react';
+import { Award, BookOpen, Camera, Gamepad2, GraduationCap, Home, RotateCcw, Shuffle, Timer, Wand2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import './styles.css';
 import {
@@ -21,19 +21,13 @@ import {
   scanWarnings,
   toFaceGrid,
 } from './cube';
-import {
-  APPROACHES,
-  CUBE_SIZES,
-  type ApproachId,
-  type CubeSizeId,
-  calculateLessonScore,
-  getLessonsFor,
-  nextRecommendedLesson,
-} from './trainer';
+import { APPROACHES, CUBE_SIZES, type ApproachId, type CubeSizeId, calculateLessonScore, getLessonsFor, nextRecommendedLesson } from './trainer';
 
 const MOVE_BUTTONS: Turn[] = ['U', "U'", 'R', "R'", 'F', "F'", 'D', "D'", 'L', "L'", 'B', "B'"];
 const SCAN_FACES: ScanFace[] = ['U', 'F', 'R'];
 const COMPLETED_DEMO_LESSON_IDS = ['2x2-orientation'];
+type Page = 'home' | 'learn' | 'play';
+type GameMode = 'practice' | 'guided' | 'scan';
 
 function formatTime(ms: number): string {
   const seconds = ms / 1000;
@@ -42,9 +36,9 @@ function formatTime(ms: number): string {
   return `${mins}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
 }
 
-function Cube3D({ grid, tilt }: { grid: Record<FaceName, FaceName[]>; tilt: { x: number; y: number } }) {
+function Cube3D({ grid, tilt, compact = false }: { grid: Record<FaceName, FaceName[]>; tilt: { x: number; y: number }; compact?: boolean }) {
   return (
-    <div className="cube-stage" aria-label="Interactive 3D cube preview">
+    <div className={compact ? 'cube-stage compact' : 'cube-stage'} aria-label="Interactive 3D cube preview">
       <div className="cube" style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
         {FACE_NAMES.map((face) => (
           <div key={face} className={`cube-face cube-face-${face.toLowerCase()}`}>
@@ -80,6 +74,7 @@ function FaceEditor({ face, values, selectedColor, onPick }: { face: ScanFace; v
 }
 
 function App() {
+  const [page, setPage] = useState<Page>('home');
   const [cube, setCube] = useState(() => createSolvedCube());
   const [moveHistory, setMoveHistory] = useState<Turn[]>([]);
   const [lastScramble, setLastScramble] = useState<Turn[]>([]);
@@ -92,6 +87,7 @@ function App() {
   const [solutionCursor, setSolutionCursor] = useState(0);
   const [selectedCubeSize, setSelectedCubeSize] = useState<CubeSizeId>('2x2');
   const [selectedApproach, setSelectedApproach] = useState<ApproachId>('guided-beginner');
+  const [gameMode, setGameMode] = useState<GameMode>('practice');
 
   const grid = useMemo(() => toFaceGrid(cube), [cube]);
   const solution = useMemo(() => invertAlgorithm(lastScramble), [lastScramble]);
@@ -131,7 +127,7 @@ function App() {
   }
 
   function scrambleCube() {
-    const scramble = generateScramble(20);
+    const scramble = generateScramble(selectedCubeSize === '2x2' ? 10 : 20);
     setLastScramble(scramble);
     setMoveHistory(scramble);
     setCube(applyAlgorithm(createSolvedCube(), scramble));
@@ -188,254 +184,209 @@ function App() {
     setScan({ U: [...grid.U], F: [...grid.F], R: [...grid.R] });
   }
 
-  return (
-    <main className="app-shell">
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">Rubik Trainer Prototype</p>
-          <h1>See the cube, understand the state, train the next moves.</h1>
-          <p className="hero-copy">
-            A web-first prototype for a future camera-assisted cube solver. Today it gives you a clean 3D cube,
-            a real move engine, scramble practice, and a three-face scan workflow that is honest about uncertainty.
+  function renderNav() {
+    return (
+      <header className="topbar">
+        <button className="brand" onClick={() => setPage('home')}>Rubik Trainer <span>v0.1.1</span></button>
+        <nav aria-label="Primary navigation">
+          <button className={page === 'home' ? 'active' : ''} onClick={() => setPage('home')}><Home size={16} /> Home</button>
+          <button className={page === 'learn' ? 'active' : ''} onClick={() => setPage('learn')}><BookOpen size={16} /> Learn</button>
+          <button className={page === 'play' ? 'active' : ''} onClick={() => setPage('play')}><Gamepad2 size={16} /> Play</button>
+        </nav>
+      </header>
+    );
+  }
+
+  function renderHomePage() {
+    return (
+      <section className="home-page">
+        <div className="home-copy">
+          <p className="eyebrow">Web cube trainer</p>
+          <h1>Practice cube solving with structure.</h1>
+          <p>
+            A quiet trainer for learning cube notation, building intuition on 2×2 first, and then practising 3×3 strategies with scoring.
           </p>
+          <div className="home-actions">
+            <button className="primary" onClick={() => setPage('play')}>Start playing</button>
+            <button onClick={() => setPage('learn')}>Read the guide</button>
+          </div>
         </div>
-        <div className="hero-status">
-          <CheckCircle2 size={18} /> Core prototype running
+        <div className="home-cube-card">
+          <Cube3D grid={grid} tilt={{ x: -24, y: -34 }} compact />
+          <div className="home-stats">
+            <span>Start: 2×2</span>
+            <span>Next: 3×3</span>
+            <span>Modes: practice · guided · scan</span>
+          </div>
         </div>
       </section>
+    );
+  }
 
-      <section className="panel learning-panel">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Training path</p>
-            <h2>Start smaller, score progress, then unlock harder solves.</h2>
-          </div>
-          <BookOpen className="panel-icon" />
+  function renderLearnPage() {
+    return (
+      <section className="page-stack">
+        <div className="page-heading">
+          <p className="eyebrow">Guide</p>
+          <h1>Learn the cube in stages.</h1>
+          <p>Training material lives here so the game surface can stay clean.</p>
         </div>
-        <div className="learning-grid">
-          <div className="learning-column">
+        <section className="panel learning-panel">
+          <div className="learning-grid">
+            <div className="learning-column">
+              <span className="field-label">Cube size</span>
+              <div className="choice-stack">
+                {CUBE_SIZES.map((cubeSize) => (
+                  <button key={cubeSize.id} className={`choice-card ${selectedCubeSize === cubeSize.id ? 'selected' : ''}`} onClick={() => setSelectedCubeSize(cubeSize.id)}>
+                    <strong>{cubeSize.label}</strong>
+                    <span>{cubeSize.whyFirst}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="learning-column">
+              <span className="field-label">Approach</span>
+              <div className="choice-stack">
+                {APPROACHES.map((approach) => (
+                  <button key={approach.id} className={`choice-card ${selectedApproach === approach.id ? 'selected' : ''}`} onClick={() => setSelectedApproach(approach.id)}>
+                    <strong>{approach.title}</strong>
+                    <span>{approach.bestFor}</span>
+                    <em>{approach.tradeoff}</em>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="lesson-focus-card">
+              <span className="field-label">Current focus</span>
+              <h2>{recommendedLesson?.title ?? `${selectedCube.label} ${selectedApproachInfo.title}`}</h2>
+              <p>{recommendedLesson?.objective ?? 'All lessons in this path are complete. Switch approach or cube size for the next challenge.'}</p>
+              {recommendedLesson && (
+                <>
+                  <div className="lesson-meta">
+                    <span>Level {recommendedLesson.level}</span>
+                    <span>Par {recommendedLesson.parMoves || 'recognition'} moves</span>
+                    <span>Target {recommendedLesson.targetSeconds}s</span>
+                  </div>
+                  <div className="strategy-box">
+                    <strong>Strategy</strong>
+                    <p>{recommendedLesson.strategy}</p>
+                    <strong>Drill</strong>
+                    <p>{recommendedLesson.drill}</p>
+                  </div>
+                  <ul className="criteria-list">
+                    {recommendedLesson.successCriteria.map((criterion) => <li key={criterion}>{criterion}</li>)}
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+        <section className="split-panels">
+          <div className="panel">
+            <div className="panel-header"><h2>Scoring</h2><Award className="panel-icon" /></div>
+            <div className="score-grid">
+              <div className="score-card total-score"><span>Completion score preview</span><strong>{previewScore.total} pts</strong></div>
+              {previewScore.breakdown.map((item) => <div className="score-card" key={item.label}><span>{item.label}</span><strong>{item.points > 0 ? `+${item.points}` : item.points}</strong></div>)}
+            </div>
+          </div>
+          <div className="panel">
+            <div className="panel-header"><h2>Lesson path</h2><GraduationCap className="panel-icon" /></div>
+            <div className="lesson-strip vertical">
+              {lessons.map((lesson) => (
+                <article key={lesson.id} className={lesson.id === recommendedLesson?.id ? 'active lesson-chip' : 'lesson-chip'}>
+                  <span>Level {lesson.level}</span>
+                  <strong>{lesson.title}</strong>
+                  <small>{lesson.scoringFocus.join(' · ')}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      </section>
+    );
+  }
+
+  function renderPlayPage() {
+    return (
+      <section className="page-stack">
+        <div className="play-header">
+          <div>
+            <p className="eyebrow">Game</p>
+            <h1>Play and practise.</h1>
+          </div>
+          <div className="game-mode-card">
+            <span className="field-label">Game mode</span>
+            <div className="segmented">
+              {(['practice', 'guided', 'scan'] as GameMode[]).map((mode) => <button key={mode} className={gameMode === mode ? 'active' : ''} onClick={() => setGameMode(mode)}>{mode}</button>)}
+            </div>
+          </div>
+        </div>
+        <section className="game-layout">
+          <aside className="panel game-sidebar">
             <span className="field-label">Cube size</span>
-            <div className="choice-stack">
-              {CUBE_SIZES.map((cubeSize) => (
-                <button
-                  key={cubeSize.id}
-                  className={`choice-card ${selectedCubeSize === cubeSize.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedCubeSize(cubeSize.id)}
-                >
-                  <strong>{cubeSize.label}</strong>
-                  <span>{cubeSize.whyFirst}</span>
-                </button>
-              ))}
+            <div className="segmented stacked-segmented">
+              {CUBE_SIZES.map((cubeSize) => <button key={cubeSize.id} className={selectedCubeSize === cubeSize.id ? 'active' : ''} onClick={() => setSelectedCubeSize(cubeSize.id)}>{cubeSize.label}</button>)}
             </div>
-          </div>
-          <div className="learning-column">
-            <span className="field-label">Approach</span>
-            <div className="choice-stack">
-              {APPROACHES.map((approach) => (
-                <button
-                  key={approach.id}
-                  className={`choice-card ${selectedApproach === approach.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedApproach(approach.id)}
-                >
-                  <strong>{approach.title}</strong>
-                  <span>{approach.bestFor}</span>
-                  <em>{approach.tradeoff}</em>
-                </button>
-              ))}
+            <div className="mini-metrics">
+              <div><span>Moves</span><strong>{moveHistory.length}</strong></div>
+              <div><span>Timer</span><strong>{isTiming ? formatTime(liveElapsed) : elapsed ? formatTime(elapsed) : 'ready'}</strong></div>
             </div>
-          </div>
-          <div className="lesson-focus-card">
-            <span className="field-label">Current focus</span>
-            <h3>{recommendedLesson?.title ?? `${selectedCube.label} ${selectedApproachInfo.title}`}</h3>
-            <p>{recommendedLesson?.objective ?? 'All lessons in this path are complete. Switch approach or cube size for the next challenge.'}</p>
-            {recommendedLesson && (
+            <button className="primary wide" onClick={scrambleCube}><Shuffle size={16} /> New scramble</button>
+            <button className="wide" onClick={startStopTimer}><Timer size={16} /> {isTiming ? 'Stop timer' : 'Start timer'}</button>
+            <button className="wide" onClick={resetCube}><RotateCcw size={16} /> Reset</button>
+          </aside>
+          <section className="panel cube-panel game-cube-panel">
+            <div className="panel-header">
+              <h2>3D cube</h2>
+              <div className="tilt-controls">
+                <button onClick={() => setTilt((value) => ({ ...value, y: value.y - 18 }))}>↶</button>
+                <button onClick={() => setTilt({ x: -28, y: -38 })}>center</button>
+                <button onClick={() => setTilt((value) => ({ ...value, y: value.y + 18 }))}>↷</button>
+              </div>
+            </div>
+            <Cube3D grid={grid} tilt={tilt} />
+            <div className="move-pad">{MOVE_BUTTONS.map((turn) => <button key={turn} onClick={() => applyMove(turn)}>{turn}</button>)}</div>
+          </section>
+          <aside className="panel practice-panel">
+            {gameMode !== 'scan' ? (
               <>
-                <div className="lesson-meta">
-                  <span>Level {recommendedLesson.level}</span>
-                  <span>Par {recommendedLesson.parMoves || 'recognition'} moves</span>
-                  <span>Target {recommendedLesson.targetSeconds}s</span>
+                <h2>{gameMode === 'guided' ? 'Guided practice' : 'Free practice'}</h2>
+                <div className="algorithm-card"><span>Scramble</span><code>{lastScramble.length ? formatAlgorithm(lastScramble) : 'Generate a scramble to begin.'}</code></div>
+                <div className="next-step-card">
+                  <span>Next move</span>
+                  <strong>{remainingSolution[0] ?? (solution.length ? 'done' : '—')}</strong>
+                  <button className="primary wide" onClick={applyNextSolutionMove} disabled={!remainingSolution.length}>Apply next move</button>
+                  <button className="wide" onClick={applyRemainingSolution} disabled={!remainingSolution.length}>Finish known solve</button>
                 </div>
-                <div className="strategy-box">
-                  <strong>Strategy</strong>
-                  <p>{recommendedLesson.strategy}</p>
-                  <strong>Drill</strong>
-                  <p>{recommendedLesson.drill}</p>
-                </div>
-                <ul className="criteria-list">
-                  {recommendedLesson.successCriteria.map((criterion) => (
-                    <li key={criterion}>{criterion}</li>
-                  ))}
-                </ul>
+              </>
+            ) : (
+              <>
+                <div className="panel-header"><h2>Three-face assistant</h2><Camera className="panel-icon" /></div>
+                <p className="note">Capture or manually enter visible faces. Exact arbitrary solving still needs enough observations to reconstruct the hidden state.</p>
+                <div className="palette">{FACE_NAMES.map((face) => <button key={face} className={selectedColor === face ? 'selected' : ''} style={{ background: COLORS[face] }} onClick={() => setSelectedColor(face)} aria-label={`Select ${COLOR_LABELS[face]}`}>{face}</button>)}</div>
+                <button className="wide" onClick={importVisibleFacesFromCube}><Wand2 size={16} /> Import visible U/F/R from cube</button>
+                <button className="wide" onClick={() => setScan(emptyPartialScan())}>Clear scan</button>
+                <div className="confidence-card"><span>{known}/27 visible stickers</span><strong>{completeness}% captured</strong><div className="progress-bar"><span style={{ width: `${completeness}%` }} /></div></div>
               </>
             )}
-          </div>
-        </div>
-        <div className="score-grid">
-          <div className="score-card total-score">
-            <Award size={18} />
-            <div>
-              <span>Completion score preview</span>
-              <strong>{previewScore.total} pts</strong>
-            </div>
-          </div>
-          {previewScore.breakdown.map((item) => (
-            <div className="score-card" key={item.label}>
-              <span>{item.label}</span>
-              <strong>{item.points > 0 ? `+${item.points}` : item.points}</strong>
-            </div>
-          ))}
-        </div>
-        <div className="lesson-strip">
-          {lessons.map((lesson) => (
-            <article key={lesson.id} className={lesson.id === recommendedLesson?.id ? 'active lesson-chip' : 'lesson-chip'}>
-              <span>Level {lesson.level}</span>
-              <strong>{lesson.title}</strong>
-              <small>{lesson.scoringFocus.join(' · ')}</small>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="workspace-grid">
-        <section className="panel cube-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Manipulate</p>
-              <h2>3D cube</h2>
-            </div>
-            <div className="tilt-controls">
-              <button onClick={() => setTilt((value) => ({ ...value, y: value.y - 18 }))}>↶</button>
-              <button onClick={() => setTilt({ x: -28, y: -38 })}>center</button>
-              <button onClick={() => setTilt((value) => ({ ...value, y: value.y + 18 }))}>↷</button>
-            </div>
-          </div>
-          <Cube3D grid={grid} tilt={tilt} />
-          <div className="move-pad">
-            {MOVE_BUTTONS.map((turn) => (
-              <button key={turn} onClick={() => applyMove(turn)}>
-                {turn}
-              </button>
-            ))}
-          </div>
-          <div className="action-row">
-            <button className="primary" onClick={scrambleCube}>
-              <Shuffle size={16} /> New scramble
-            </button>
-            <button onClick={resetCube}>
-              <RotateCcw size={16} /> Reset
-            </button>
-            <button onClick={startStopTimer}>
-              <Timer size={16} /> {isTiming ? 'Stop timer' : 'Start timer'}
-            </button>
-          </div>
+          </aside>
         </section>
-
-        <section className="panel trainer-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Core trainer</p>
-              <h2>Scramble and solve guidance</h2>
-            </div>
-            <Sparkles className="panel-icon" />
-          </div>
-          <div className="metric-grid">
-            <div className="metric-card">
-              <span>Moves applied</span>
-              <strong>{moveHistory.length}</strong>
-            </div>
-            <div className="metric-card">
-              <span>Timer</span>
-              <strong>{isTiming ? formatTime(liveElapsed) : elapsed ? formatTime(elapsed) : 'ready'}</strong>
-            </div>
-          </div>
-          <div className="algorithm-card">
-            <span>Current scramble</span>
-            <code>{lastScramble.length ? formatAlgorithm(lastScramble) : 'Generate a scramble to start a known-state session.'}</code>
-          </div>
-          <div className="algorithm-card solution">
-            <span>Known-state solution</span>
-            <code>{remainingSolution.length ? formatAlgorithm(remainingSolution) : solution.length ? 'Solved via the known-state path.' : 'Available when the app generated the scramble.'}</code>
-          </div>
-          <div className="next-step-card">
-            <span>Next best move</span>
-            <strong>{remainingSolution[0] ?? (solution.length ? 'done' : '—')}</strong>
-            <div className="action-row">
-              <button className="primary" onClick={applyNextSolutionMove} disabled={!remainingSolution.length}>
-                Apply next move
-              </button>
-              <button onClick={applyRemainingSolution} disabled={!remainingSolution.length}>
-                Finish known solve
-              </button>
-            </div>
-          </div>
-          <p className="note">
-            This is the reliable prototype path: if the app knows the scramble/history, it can produce a deterministic
-            solution sequence. The camera path needs state reconstruction before it can do the same.
-          </p>
-        </section>
+        {gameMode === 'scan' && (
+          <section className="panel scan-panel">
+            <div className="scan-faces">{SCAN_FACES.map((face) => <FaceEditor key={face} face={face} values={scan[face]} selectedColor={selectedColor} onPick={(index, color) => setScanSticker(face, index, color)} />)}</div>
+            <ul className="scan-warnings">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+          </section>
+        )}
       </section>
+    );
+  }
 
-      <section className="panel scan-panel">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Three-face assistant</p>
-            <h2>Scan / enter visible faces</h2>
-          </div>
-          <Camera className="panel-icon" />
-        </div>
-        <div className="scan-layout">
-          <div className="scan-controls">
-            <p>
-              Prototype camera substitute: pick a color and tap stickers for the three visible faces. Later, this panel
-              becomes the image capture + color classifier.
-            </p>
-            <div className="palette">
-              {FACE_NAMES.map((face) => (
-                <button
-                  key={face}
-                  className={selectedColor === face ? 'selected' : ''}
-                  style={{ background: COLORS[face] }}
-                  onClick={() => setSelectedColor(face)}
-                  aria-label={`Select ${COLOR_LABELS[face]}`}
-                >
-                  {face}
-                </button>
-              ))}
-            </div>
-            <div className="action-row stacked">
-              <button onClick={importVisibleFacesFromCube}>
-                <Wand2 size={16} /> Import visible U/F/R from cube
-              </button>
-              <button onClick={() => setScan(emptyPartialScan())}>Clear scan</button>
-            </div>
-            <div className="confidence-card">
-              <div>
-                <span>{known}/27 visible stickers</span>
-                <strong>{completeness}% captured</strong>
-              </div>
-              <div className="progress-bar">
-                <span style={{ width: `${completeness}%` }} />
-              </div>
-            </div>
-          </div>
-          <div className="scan-faces">
-            {SCAN_FACES.map((face) => (
-              <FaceEditor key={face} face={face} values={scan[face]} selectedColor={selectedColor} onPick={(index, color) => setScanSticker(face, index, color)} />
-            ))}
-          </div>
-        </div>
-        <div className="guidance-box">
-          <div className="guidance-title">
-            <Info size={18} /> Guidance
-          </div>
-          <ul>
-            {warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-            {known === 27 && <li>Visible faces are complete. Next prototype step: capture hidden faces or match against a known scramble session.</li>}
-          </ul>
-        </div>
-      </section>
+  return (
+    <main className="app-shell">
+      {renderNav()}
+      {page === 'home' && renderHomePage()}
+      {page === 'learn' && renderLearnPage()}
+      {page === 'play' && renderPlayPage()}
     </main>
   );
 }
