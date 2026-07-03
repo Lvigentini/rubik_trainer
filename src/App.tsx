@@ -1,4 +1,4 @@
-import { Camera, CheckCircle2, Info, RotateCcw, Shuffle, Sparkles, Timer, Wand2 } from 'lucide-react';
+import { Award, BookOpen, Camera, CheckCircle2, Info, RotateCcw, Shuffle, Sparkles, Timer, Wand2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import './styles.css';
 import {
@@ -21,9 +21,19 @@ import {
   scanWarnings,
   toFaceGrid,
 } from './cube';
+import {
+  APPROACHES,
+  CUBE_SIZES,
+  type ApproachId,
+  type CubeSizeId,
+  calculateLessonScore,
+  getLessonsFor,
+  nextRecommendedLesson,
+} from './trainer';
 
 const MOVE_BUTTONS: Turn[] = ['U', "U'", 'R', "R'", 'F', "F'", 'D', "D'", 'L', "L'", 'B', "B'"];
 const SCAN_FACES: ScanFace[] = ['U', 'F', 'R'];
+const COMPLETED_DEMO_LESSON_IDS = ['2x2-orientation'];
 
 function formatTime(ms: number): string {
   const seconds = ms / 1000;
@@ -80,6 +90,8 @@ function App() {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [liveElapsed, setLiveElapsed] = useState(0);
   const [solutionCursor, setSolutionCursor] = useState(0);
+  const [selectedCubeSize, setSelectedCubeSize] = useState<CubeSizeId>('2x2');
+  const [selectedApproach, setSelectedApproach] = useState<ApproachId>('guided-beginner');
 
   const grid = useMemo(() => toFaceGrid(cube), [cube]);
   const solution = useMemo(() => invertAlgorithm(lastScramble), [lastScramble]);
@@ -88,6 +100,23 @@ function App() {
   const known = countKnownStickers(scan);
   const completeness = scanCompleteness(scan);
   const isTiming = timerStart !== null;
+  const lessons = useMemo(() => getLessonsFor(selectedCubeSize, selectedApproach), [selectedCubeSize, selectedApproach]);
+  const recommendedLesson = useMemo(
+    () => nextRecommendedLesson(selectedCubeSize, selectedApproach, COMPLETED_DEMO_LESSON_IDS),
+    [selectedCubeSize, selectedApproach],
+  );
+  const selectedCube = CUBE_SIZES.find((cubeSize) => cubeSize.id === selectedCubeSize) ?? CUBE_SIZES[0];
+  const selectedApproachInfo = APPROACHES.find((approach) => approach.id === selectedApproach) ?? APPROACHES[0];
+  const previewScore = calculateLessonScore({
+    completed: true,
+    optimalMoves: recommendedLesson?.parMoves || 10,
+    actualMoves: Math.max(recommendedLesson?.parMoves || 10, moveHistory.length || recommendedLesson?.parMoves || 10),
+    elapsedSeconds: elapsed ? elapsed / 1000 : Math.round((recommendedLesson?.targetSeconds ?? 90) * 0.8),
+    targetSeconds: recommendedLesson?.targetSeconds ?? 90,
+    hintsUsed: 0,
+    mistakes: 0,
+    streak: 2,
+  });
 
   useEffect(() => {
     if (!timerStart) return undefined;
@@ -172,6 +201,98 @@ function App() {
         </div>
         <div className="hero-status">
           <CheckCircle2 size={18} /> Core prototype running
+        </div>
+      </section>
+
+      <section className="panel learning-panel">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Training path</p>
+            <h2>Start smaller, score progress, then unlock harder solves.</h2>
+          </div>
+          <BookOpen className="panel-icon" />
+        </div>
+        <div className="learning-grid">
+          <div className="learning-column">
+            <span className="field-label">Cube size</span>
+            <div className="choice-stack">
+              {CUBE_SIZES.map((cubeSize) => (
+                <button
+                  key={cubeSize.id}
+                  className={`choice-card ${selectedCubeSize === cubeSize.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedCubeSize(cubeSize.id)}
+                >
+                  <strong>{cubeSize.label}</strong>
+                  <span>{cubeSize.whyFirst}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="learning-column">
+            <span className="field-label">Approach</span>
+            <div className="choice-stack">
+              {APPROACHES.map((approach) => (
+                <button
+                  key={approach.id}
+                  className={`choice-card ${selectedApproach === approach.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedApproach(approach.id)}
+                >
+                  <strong>{approach.title}</strong>
+                  <span>{approach.bestFor}</span>
+                  <em>{approach.tradeoff}</em>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="lesson-focus-card">
+            <span className="field-label">Current focus</span>
+            <h3>{recommendedLesson?.title ?? `${selectedCube.label} ${selectedApproachInfo.title}`}</h3>
+            <p>{recommendedLesson?.objective ?? 'All lessons in this path are complete. Switch approach or cube size for the next challenge.'}</p>
+            {recommendedLesson && (
+              <>
+                <div className="lesson-meta">
+                  <span>Level {recommendedLesson.level}</span>
+                  <span>Par {recommendedLesson.parMoves || 'recognition'} moves</span>
+                  <span>Target {recommendedLesson.targetSeconds}s</span>
+                </div>
+                <div className="strategy-box">
+                  <strong>Strategy</strong>
+                  <p>{recommendedLesson.strategy}</p>
+                  <strong>Drill</strong>
+                  <p>{recommendedLesson.drill}</p>
+                </div>
+                <ul className="criteria-list">
+                  {recommendedLesson.successCriteria.map((criterion) => (
+                    <li key={criterion}>{criterion}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="score-grid">
+          <div className="score-card total-score">
+            <Award size={18} />
+            <div>
+              <span>Completion score preview</span>
+              <strong>{previewScore.total} pts</strong>
+            </div>
+          </div>
+          {previewScore.breakdown.map((item) => (
+            <div className="score-card" key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.points > 0 ? `+${item.points}` : item.points}</strong>
+            </div>
+          ))}
+        </div>
+        <div className="lesson-strip">
+          {lessons.map((lesson) => (
+            <article key={lesson.id} className={lesson.id === recommendedLesson?.id ? 'active lesson-chip' : 'lesson-chip'}>
+              <span>Level {lesson.level}</span>
+              <strong>{lesson.title}</strong>
+              <small>{lesson.scoringFocus.join(' · ')}</small>
+            </article>
+          ))}
         </div>
       </section>
 
