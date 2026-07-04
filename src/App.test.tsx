@@ -55,65 +55,41 @@ describe('Home page — agent-supported repositioning', () => {
   });
 });
 
-describe('Learn page — progressive visual pathway', () => {
+describe('Learn page — guided discovery', () => {
   function navigateToLearn() {
     renderApp(['/learn']);
   }
 
-  it('starts with a "Start here" panel', () => {
+  it('shows the curriculum sidebar with both groups', () => {
     navigateToLearn();
-
-    expect(screen.getByText(/start.*2×2 skill path/i)).toBeInTheDocument();
+    const sidebar = within(screen.getByTestId('learn-sidebar'));
+    expect(sidebar.getByText(/2×2 Foundation/i)).toBeInTheDocument();
+    expect(sidebar.getByText(/3×3 Beginner/i)).toBeInTheDocument();
   });
 
-  it('first visible path is 2x2 foundation', () => {
+  it('opens on the challenge, with hints hidden until asked', () => {
     navigateToLearn();
-
-    expect(screen.getByText(/2×2 Foundation/i)).toBeInTheDocument();
+    expect(screen.getByTestId('challenge-panel')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /stuck\? get a nudge/i })).toBeInTheDocument();
+    expect(screen.queryByText(/common mistake/i)).not.toBeInTheDocument();
   });
 
-  it('shows pathway timeline with stage progression', () => {
+  it('lesson has self-check and practice CTA; no score cards or timer', () => {
     navigateToLearn();
-
-    expect(screen.getByTestId('pathway-timeline')).toBeInTheDocument();
-  });
-
-  it('lesson has diagram, steps, common mistake, self-check, and practice CTA', () => {
-    navigateToLearn();
-
-    expect(screen.getByTestId('lesson-diagram')).toBeInTheDocument();
-    expect(screen.getByText(/common mistake/i)).toBeInTheDocument();
     expect(screen.getByTestId('self-check-card')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /practise this skill/i })).toBeInTheDocument();
-  });
-
-  it('has at least one self-check with correct/incorrect feedback', () => {
-    navigateToLearn();
-
-    const selfCheck = screen.getByTestId('self-check-card');
-    expect(selfCheck).toBeInTheDocument();
-    // Options exist
-    expect(selfCheck.querySelectorAll('button').length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('has at least one video reference card', () => {
-    navigateToLearn();
-
-    expect(screen.getByTestId('video-reference-card')).toBeInTheDocument();
-  });
-
-  it('does not show score cards, move pad, or timer', () => {
-    navigateToLearn();
-
     expect(screen.queryByText('Completion score preview')).not.toBeInTheDocument();
     expect(screen.queryByText('Game mode')).not.toBeInTheDocument();
   });
 
-  it('diagrams are data-driven SVG elements', () => {
-    navigateToLearn();
+  it('locked lessons show the locked view with test-out, not a redirect', () => {
+    renderApp(['/learn/3x3-white-cross']);
+    expect(screen.getByRole('button', { name: /test out of this lesson/i })).toBeInTheDocument();
+  });
 
-    const diagram = screen.getByTestId('lesson-diagram');
-    expect(diagram.querySelector('svg')).toBeInTheDocument();
+  it('video references remain available', () => {
+    navigateToLearn();
+    expect(screen.getByTestId('video-reference-card')).toBeInTheDocument();
   });
 });
 
@@ -180,7 +156,7 @@ describe('Routing shell', () => {
   it('navigates between sections via topbar links', () => {
     renderApp();
     fireEvent.click(screen.getByRole('link', { name: /learn/i }));
-    expect(screen.getByText(/2×2 Foundation/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/2×2 Foundation/i).length).toBeGreaterThan(0);
   });
 
   it('/learn redirects to the current (first) lesson', () => {

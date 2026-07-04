@@ -35,7 +35,6 @@ function LearnRoute() {
   return (
     <LearnPage
       stageId={stage.id}
-      onSelectStage={(id) => navigate(`/learn/${id}`)}
       onPractice={(id) => navigate(`/play/coach?skill=${id}`)}
     />
   );
