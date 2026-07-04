@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import { ProgressProvider } from './progress/ProgressContext';
+import { CHALLENGES } from './challenges';
+import { getStageById } from './learningPath';
+import { getSelfCheckById } from './selfChecks';
+import type { Turn } from './cube';
 
 function renderApp(initialEntries: string[] = ['/']) {
   return render(
@@ -179,5 +183,72 @@ describe('Routing shell', () => {
   it('unknown routes redirect home', () => {
     renderApp(['/nowhere']);
     expect(screen.getAllByText(/agent-supported/i).length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('Learn journey integration — key, unlock, and chip seams', () => {
+  const BAND_LABEL_BY_FACE: Record<string, RegExp> = {
+    U: /top row/i, R: /right column/i, F: /front layer/i,
+  };
+
+  function performTurn(turn: Turn) {
+    const bar = within(screen.getByTestId('band-reference-bar'));
+    fireEvent.click(bar.getByRole('button', { name: BAND_LABEL_BY_FACE[turn[0]] }));
+    fireEvent.click(bar.getByRole('button', {
+      name: turn.endsWith("'") ? /counter-clockwise/i : /turn selected layer clockwise$/i,
+    }));
+  }
+
+  function completeSequenceChallenge() {
+    for (const turn of ['U', 'R', 'F', "F'", "R'", "U'"] as Turn[]) performTurn(turn);
+  }
+
+  function answerSelfCheckCorrectly(stageId: string) {
+    const stage = getStageById(stageId as Parameters<typeof getStageById>[0])!;
+    const check = getSelfCheckById(stage.selfCheckIds[0])!;
+    const correct = check.options.find((o) => check.answerIds.includes(o.id))!;
+    const card = within(screen.getByTestId('self-check-card'));
+    fireEvent.click(card.getByRole('button', { name: correct.label }));
+  }
+
+  it('completes lesson 1 via band turns, unlocks lesson 2, and completes lesson 2 via the demo hint path', () => {
+    renderApp(['/learn']);
+
+    // Lesson 1 (2x2-orientation): sequence challenge U R F F' R' U'.
+    completeSequenceChallenge();
+    answerSelfCheckCorrectly('2x2-orientation');
+
+    expect(screen.getByText('1/10 skills')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /lesson complete/i })).toBeInTheDocument();
+
+    const sidebar = within(screen.getByTestId('learn-sidebar'));
+    const lesson2Link = sidebar.getByRole('link', { name: /build one complete face/i });
+    expect(lesson2Link.className).toContain('unlocked');
+
+    // Navigate to lesson 2 via the sidebar link — pins that LessonView remounts cleanly
+    // (a missing `key` would carry over `recordedRef` and break the demo-completion below).
+    fireEvent.click(lesson2Link);
+
+    expect(screen.getByText(CHALLENGES['2x2-first-face'].goalText)).toBeInTheDocument();
+
+    // Lesson 2 (2x2-first-face): work down the full hint ladder to the move-by-move demo.
+    fireEvent.click(screen.getByRole('button', { name: /stuck\? get a nudge/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show me the steps/i }));
+    fireEvent.click(screen.getByRole('button', { name: /watch the moves/i }));
+    fireEvent.click(screen.getByRole('button', { name: /reset & watch/i }));
+
+    const demoLength = CHALLENGES['2x2-first-face'].setup.length;
+    for (let i = 0; i < demoLength; i += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /next move/i }));
+    }
+    expect(screen.queryByRole('button', { name: /next move/i })).not.toBeInTheDocument();
+
+    answerSelfCheckCorrectly('2x2-first-face');
+
+    expect(screen.getByText('2/10 skills')).toBeInTheDocument();
+    const completionHeading = screen.getByRole('heading', { name: /lesson complete/i });
+    const completionSection = completionHeading.closest('section')!;
+    // Demo use caps mastery at 1, even though the self-check was passed first try.
+    expect(within(completionSection).getByLabelText('Mastery 1 of 3')).toBeInTheDocument();
   });
 });

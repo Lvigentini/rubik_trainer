@@ -28,7 +28,7 @@ export function LearnPage({ stageId, onPractice }: Props) {
         <PanelLeft size={16} /> Curriculum
       </button>
       <div className={`learn-sidebar-wrap ${drawerOpen ? 'open' : ''}`}>
-        <LearnSidebar currentStageId={stage.id} />
+        <LearnSidebar currentStageId={stage.id} onNavigate={() => setDrawerOpen(false)} />
       </div>
       <main className="learn-main">
         {/* key remounts per stage: LessonView's per-visit refs must reset */}

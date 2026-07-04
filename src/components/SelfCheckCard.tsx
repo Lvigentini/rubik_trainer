@@ -10,11 +10,12 @@ type Props = {
 };
 
 export function SelfCheckCard({ selfCheck, onPractice, onResult, allowRetry }: Props) {
+  const [options] = useState(() => [...selfCheck.options].sort(() => Math.random() - 0.5));
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
 
   const isCorrect = selected ? checkAnswer(selfCheck, [selected]) : false;
-  const selectedOption = selfCheck.options.find((o) => o.id === selected);
+  const selectedOption = options.find((o) => o.id === selected);
 
   function handleSelect(optionId: string) {
     if (answered) return;
@@ -27,10 +28,10 @@ export function SelfCheckCard({ selfCheck, onPractice, onResult, allowRetry }: P
     <div className="self-check-card" data-testid="self-check-card">
       <h4 className="self-check-prompt">{selfCheck.prompt}</h4>
       <div className="self-check-options">
-        {selfCheck.options.map((option) => (
+        {options.map((option) => (
           <button
             key={option.id}
-            className={`self-check-option ${answered && option.id === selected ? (isCorrect ? 'correct' : 'incorrect') : ''} ${answered && selfCheck.answerIds.includes(option.id) ? 'correct-answer' : ''}`}
+            className={`self-check-option ${answered && option.id === selected ? (isCorrect ? 'correct' : 'incorrect') : ''} ${answered && isCorrect && selfCheck.answerIds.includes(option.id) ? 'correct-answer' : ''}`}
             onClick={() => handleSelect(option.id)}
             disabled={answered}
             aria-pressed={option.id === selected}

@@ -10,7 +10,12 @@ const GROUPS: { id: LearningStage['group']; label: string }[] = [
   { id: '3x3-beginner', label: '3×3 Beginner' },
 ];
 
-export function LearnSidebar({ currentStageId }: { currentStageId: LearningStageId }) {
+type Props = {
+  currentStageId: LearningStageId;
+  onNavigate?: () => void;
+};
+
+export function LearnSidebar({ currentStageId, onNavigate }: Props) {
   const snapshot = useProgress();
   return (
     <nav className="learn-sidebar" aria-label="Curriculum" data-testid="learn-sidebar">
@@ -33,6 +38,7 @@ export function LearnSidebar({ currentStageId }: { currentStageId: LearningStage
                     <NavLink
                       to={`/learn/${stage.id}`}
                       className={`sidebar-stage ${status} ${stage.id === currentStageId ? 'current' : ''}`}
+                      onClick={() => onNavigate?.()}
                     >
                       <span className="stage-chip" aria-hidden="true">
                         {completed ? <Check size={13} /> : status === 'locked' ? <Lock size={12} /> : stage.level}
