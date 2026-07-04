@@ -106,7 +106,7 @@
   margin: 0 0 6px;
   color: var(--text-strong);
 }
-.lesson-skill { color: var(--text-body); margin: 0; }
+.lesson-view .lesson-skill, .lesson-view .lesson-outcome { color: var(--text-body); margin: 0; }
 .lesson-completed-banner {
   display: inline-flex;
   align-items: center;
