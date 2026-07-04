@@ -9,17 +9,6 @@ import { getStageById, type LearningStageId } from './learningPath';
 import { useProgress } from './progress/ProgressContext';
 import { getCurrentStageId } from './progress/unlocks';
 
-function HomeRoute() {
-  const navigate = useNavigate();
-  return (
-    <HomePage
-      onStartPathway={() => navigate('/learn')}
-      onScanCoach={() => navigate('/play/scan')}
-      onFreePractice={() => navigate('/play/free')}
-    />
-  );
-}
-
 function LearnIndexRedirect() {
   const snapshot = useProgress();
   return <Navigate to={`/learn/${getCurrentStageId(snapshot)}`} replace />;
@@ -50,7 +39,7 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<HomeRoute />} />
+        <Route index element={<HomePage />} />
         <Route path="learn" element={<LearnIndexRedirect />} />
         <Route path="learn/:stageId" element={<LearnRoute />} />
         <Route path="play" element={<Navigate to="/play/free" replace />} />

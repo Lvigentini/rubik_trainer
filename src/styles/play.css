@@ -1,0 +1,309 @@
+/* src/styles/play.css — Play page chrome: header, mode picker, game layout,
+   metric/score cards, move history. Every selector is scoped under
+   `.page-stack` (the root PracticePage already renders) so it outranks the
+   same-named legacy rules in styles.css on specificity alone, regardless of
+   CSS import order. The raw 3D cube box (.cube-stage/.cube/.cube-face/
+   .sticker/.band-reference-bar/.face-editor family) is left on legacy
+   styles.css here — it's explicitly migrated into components.css in the
+   legacy-retirement task, and touching it twice would be wasted work. */
+
+.page-stack { display: grid; gap: 22px; }
+
+.page-stack h1,
+.page-stack h2 {
+  font-family: var(--font-display);
+  color: var(--text-strong);
+  letter-spacing: -0.01em;
+}
+
+.page-stack .eyebrow,
+.page-stack .field-label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.page-stack .play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.page-stack .play-header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+}
+
+.page-stack .skill-context {
+  margin: 6px 0 0;
+  color: var(--text-body);
+  font-weight: 600;
+}
+
+/* --- Mode picker: sticker-chip segmented control --- */
+.page-stack .game-mode-card {
+  padding: 12px 14px;
+  min-width: 320px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.page-stack .segmented { display: flex; gap: 6px; }
+.page-stack .stacked-segmented { display: grid; }
+.page-stack .stacked-segmented button { justify-content: flex-start; }
+
+.page-stack .segmented button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+  font-weight: 700;
+  text-transform: none;
+  transition: transform var(--duration-quick) var(--ease-spring), background var(--duration-quick) ease;
+}
+
+.page-stack .segmented button:hover:not(.active) { background: var(--surface-raised); }
+.page-stack .segmented button:active { transform: translateY(1px); }
+
+.page-stack .segmented button.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+/* --- Game layout: sidebar / cube / practice panel, stacks under 1000px --- */
+.page-stack .game-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(420px, 1fr) 300px;
+  gap: 18px;
+  align-items: start;
+}
+
+.page-stack .game-sidebar,
+.page-stack .cube-panel,
+.page-stack .practice-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+
+.page-stack .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.page-stack .panel-icon { color: var(--color-accent); }
+
+.page-stack .tilt-controls { display: flex; gap: 6px; }
+.page-stack .tilt-controls button {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+}
+
+.page-stack .mini-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 2px 0;
+}
+
+.page-stack .mini-metrics div {
+  padding: 10px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+}
+
+.page-stack .mini-metrics span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.page-stack .mini-metrics strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-strong);
+  font-size: 1.2rem;
+}
+
+.page-stack .wide { width: 100%; }
+
+/* --- Move history --- */
+.page-stack .move-history { margin-top: 4px; }
+.page-stack .history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.page-stack .history-actions { display: flex; gap: 6px; }
+.page-stack .history-actions button {
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+}
+.page-stack .history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 110px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+.page-stack .history-list .empty-history { color: var(--text-muted); font-family: inherit; font-weight: 500; }
+.page-stack .history-list span {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+}
+.page-stack .history-list span.future { opacity: 0.4; }
+
+.page-stack .keyboard-hints { margin-top: 2px; }
+.page-stack .keyboard-hints p { color: var(--text-muted); font-size: 0.82rem; line-height: 1.5; margin: 0; }
+.page-stack .keyboard-hints kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+/* --- Practice-side cards: scramble, next move, solved/score --- */
+.page-stack .note { color: var(--text-muted); line-height: 1.55; margin: 0; }
+
+.page-stack .algorithm-card,
+.page-stack .confidence-card,
+.page-stack .next-step-card {
+  padding: 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+}
+
+.page-stack .algorithm-card span,
+.page-stack .confidence-card span,
+.page-stack .next-step-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.page-stack .algorithm-card code {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-accent);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  font-weight: 700;
+}
+
+.page-stack .confidence-card strong,
+.page-stack .next-step-card strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-strong);
+  font-size: 1.3rem;
+}
+
+.page-stack .next-step-card { display: grid; gap: 10px; }
+
+/* --- Score panel (Solve Coach — only rendered after a real completion) --- */
+.page-stack .game-score-panel {
+  padding: 16px;
+  background: var(--surface-raised);
+  border: 2px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  gap: 12px;
+}
+
+.page-stack .score-grid,
+.page-stack .compact-score-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.page-stack .score-card {
+  min-height: 60px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 10px 12px;
+  flex: 1 1 110px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+}
+
+.page-stack .score-card span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.page-stack .score-card strong { color: var(--text-strong); font-size: 1.1rem; }
+
+.page-stack .total-score {
+  border-color: var(--sticker-yellow);
+  background: var(--surface-sunken);
+}
+.page-stack .total-score strong { color: var(--sticker-orange); }
+
+/* --- Responsive: 3-column game layout stacks under 1000px --- */
+@media (max-width: 1000px) {
+  .page-stack .game-layout { grid-template-columns: 1fr; }
+  .page-stack .game-mode-card { min-width: 0; }
+}
+
+@media (max-width: 640px) {
+  .page-stack .play-header { align-items: stretch; flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-stack .segmented button { transition: none; }
+}

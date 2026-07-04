@@ -30,44 +30,62 @@ function renderApp(initialEntries: string[] = ['/']) {
   );
 }
 
-describe('Home page — agent-supported repositioning', () => {
-  it('hero communicates agent-supported coaching', () => {
+describe('Home page — resume-driven, agent-supported', () => {
+  it('first visit: communicates agent-supported coaching and shows a single primary CTA', () => {
     renderApp();
 
     expect(screen.getAllByText(/agent-supported/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /start learning/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /free play/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('home-resume-card')).not.toBeInTheDocument();
   });
 
-  it('shows three-face scan concept above the fold', () => {
-    renderApp();
-
-    expect(screen.getByText(/show three faces/i)).toBeInTheDocument();
-  });
-
-  it('mentions skills pathway', () => {
-    renderApp();
-
-    expect(screen.getByText(/skill pathway/i)).toBeInTheDocument();
-  });
-
-  it('frames practice as reinforcement, not primary promise', () => {
-    renderApp();
-
-    expect(screen.getByRole('button', { name: /free practice/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^start playing$/i })).not.toBeInTheDocument();
-  });
-
-  it('does not show score tables, move pad, or full lesson lists', () => {
-    renderApp();
-
-    expect(screen.queryByText('Completion score preview')).not.toBeInTheDocument();
-    expect(screen.queryByText('Three-face assistant')).not.toBeInTheDocument();
-    expect(screen.queryByText('Level 1')).not.toBeInTheDocument();
-  });
-
-  it('renders three-panel scan visual as SVG/React', () => {
+  it('first visit: shows the three-face scan concept row and no fake data', () => {
     renderApp();
 
     expect(screen.getByTestId('scan-coach-preview')).toBeInTheDocument();
+    expect(screen.getByText(/show three faces/i)).toBeInTheDocument();
+    expect(screen.queryByText('Completion score preview')).not.toBeInTheDocument();
+    expect(screen.queryByText('Three-face assistant')).not.toBeInTheDocument();
+  });
+
+  it('first visit: Start learning navigates to /learn', () => {
+    renderApp();
+
+    fireEvent.click(screen.getByRole('button', { name: /start learning/i }));
+    expect(screen.getByTestId('learn-sidebar')).toBeInTheDocument();
+  });
+
+  it('first visit: Free play navigates to /play/free', () => {
+    renderApp();
+
+    fireEvent.click(screen.getByRole('button', { name: /free play/i }));
+    expect(screen.getByRole('heading', { name: /practise the cube/i })).toBeInTheDocument();
+  });
+
+  it('returning: after completing a lesson, shows the resume card pointing at the current stage with progress and streak', () => {
+    const store = new InMemoryProgressStore();
+    store.completeLesson('2x2-orientation', 3, 0);
+
+    renderAppWithStore(store);
+
+    const card = within(screen.getByTestId('home-resume-card'));
+    expect(card.getByText(/continue: lesson 2/i)).toBeInTheDocument();
+    expect(card.getByText(/build one complete face/i)).toBeInTheDocument();
+    expect(card.getByText('1/10')).toBeInTheDocument();
+    expect(card.getByText(/1 day/i)).toBeInTheDocument();
+
+    fireEvent.click(card.getByRole('button', { name: /continue lesson/i }));
+    expect(screen.getByRole('heading', { name: /build one complete face/i })).toBeInTheDocument();
+  });
+
+  it('returning: secondary tiles for Free Play / Solve Coach / Scan Coach navigate into Play', () => {
+    const store = new InMemoryProgressStore();
+    store.completeLesson('2x2-orientation', 3, 0);
+    renderAppWithStore(store);
+
+    fireEvent.click(screen.getByRole('button', { name: PLAY_MODES.scan.label }));
+    expect(screen.getByRole('heading', { name: /three-face assistant/i })).toBeInTheDocument();
   });
 });
 

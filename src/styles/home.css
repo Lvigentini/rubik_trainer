@@ -1,0 +1,258 @@
+/* src/styles/home.css — resume-driven Home. Fresh class names throughout
+   (no `.home-page`/`.home-hero`/`.feature-card`) so nothing here fights the
+   legacy styles.css rules of the same name; those go dead once HomePage
+   stops rendering them and are deleted in the legacy-retirement task. */
+
+.home-view {
+  display: grid;
+  gap: 28px;
+}
+
+.home-eyebrow {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--color-accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* --- First visit --- */
+.home-view-first { gap: 32px; }
+
+.home-intro { display: grid; gap: 12px; max-width: 640px; }
+
+.home-headline {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.home-lede {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.home-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.home-cta-primary,
+.home-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform var(--duration-quick) var(--ease-spring), box-shadow var(--duration-quick) ease;
+}
+
+.home-cta-primary {
+  border: none;
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-card-raised);
+}
+
+.home-cta-secondary {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.home-cta-primary:hover,
+.home-cta-secondary:hover { transform: translateY(-1px); }
+
+.home-cta-primary:active,
+.home-cta-secondary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.home-concept-row .scan-coach-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.home-concept-row .preview-panel {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.home-concept-row .preview-visual {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.home-concept-row .preview-speech-bubble {
+  display: grid;
+  align-items: center;
+  padding: 12px 14px;
+  min-height: 74px;
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.home-concept-row .preview-speech-bubble p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.home-concept-row .preview-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* --- Returning / resume --- */
+.home-view-resume { gap: 24px; }
+
+.home-resume-card {
+  background: var(--surface-raised);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-raised);
+  padding: 22px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.home-resume-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.6vw, 1.8rem);
+  letter-spacing: -0.01em;
+  margin: 4px 0 0;
+  color: var(--text-strong);
+}
+
+.home-resume-outcome {
+  margin: 0 0 6px;
+  color: var(--text-body);
+  max-width: 60ch;
+}
+
+.home-progress-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.home-progress-stat {
+  display: grid;
+  gap: 4px;
+  min-width: 96px;
+  padding: 10px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+}
+
+.home-progress-stat span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-progress-stat strong {
+  color: var(--text-strong);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.home-streak-stat strong { color: var(--sticker-orange); }
+
+.home-streak-best {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.home-mode-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.home-mode-tile {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform var(--duration-quick) var(--ease-spring), border-color var(--duration-quick) ease;
+}
+
+.home-mode-tile:hover { border-color: var(--color-accent); transform: translateY(-2px); }
+.home-mode-tile:active { transform: translateY(1px); box-shadow: none; }
+
+.home-mode-tile-icon { color: var(--color-accent); }
+
+.home-mode-tile-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.home-mode-tile-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* --- Responsive: Home works to 360px --- */
+@media (max-width: 720px) {
+  .home-concept-row .scan-coach-preview { grid-template-columns: 1fr; }
+  .home-mode-tiles { grid-template-columns: 1fr; }
+  .home-cta-row { flex-direction: column; align-items: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-cta-primary,
+  .home-cta-secondary,
+  .home-mode-tile {
+    transition: none;
+  }
+}
