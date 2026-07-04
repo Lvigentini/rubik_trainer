@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LearningStage } from '../../learningPath';
 import { getSelfCheckById } from '../../selfChecks';
@@ -22,7 +22,8 @@ export function LessonView({ stage, onPractice }: { stage: LearningStage; onPrac
   const [challengeDone, setChallengeDone] = useState(false);
   const [passedChecks, setPassedChecks] = useState<Set<string>>(new Set());
   const [missedAny, setMissedAny] = useState(false);
-  const [recorded, setRecorded] = useState(false);
+  const recordedRef = useRef(false);
+  const [attemptsAtMount] = useState(() => snapshot.lessons[stage.id]?.attempts ?? 0);
 
   const selfChecks = stage.selfCheckIds.map(getSelfCheckById).filter(Boolean);
   const videos = getVideosForStage(stage.id);
@@ -35,24 +36,29 @@ export function LessonView({ stage, onPractice }: { stage: LearningStage; onPrac
       setMissedAny(true);
       return;
     }
-    const passed = new Set(passedChecks).add(checkId);
-    setPassedChecks(passed);
-    if (challengeDone && passed.size === selfChecks.length && !recorded) {
-      setRecorded(true);
-      store.completeLesson(stage.id, calculateMastery(hintLevel, !missedAny), hintLevel);
-    }
+    setPassedChecks((prev) => new Set(prev).add(checkId));
   }
 
   function handleGoalMet() {
     setChallengeDone(true);
-    if (passedChecks.size === selfChecks.length && selfChecks.length > 0 && !recorded) {
-      setRecorded(true);
-      store.completeLesson(stage.id, calculateMastery(hintLevel, !missedAny), hintLevel);
-    }
   }
 
-  const justCompleted = recorded;
-  const mastery = snapshot.lessons[stage.id]?.mastery;
+  useEffect(() => {
+    if (
+      challengeDone &&
+      selfChecks.length > 0 &&
+      passedChecks.size === selfChecks.length &&
+      !recordedRef.current
+    ) {
+      recordedRef.current = true;
+      store.completeLesson(stage.id, calculateMastery(hintLevel, !missedAny), hintLevel);
+    }
+  }, [challengeDone, passedChecks, missedAny, selfChecks.length, hintLevel, stage.id, store]);
+
+  // Reflects the store, not local state, so it stays correct even if the effect above
+  // has not yet committed on this render (avoids the stale-closure gate from before).
+  const justCompleted = (existing?.attempts ?? 0) > attemptsAtMount;
+  const mastery = existing?.mastery;
 
   return (
     <article className="lesson-view">

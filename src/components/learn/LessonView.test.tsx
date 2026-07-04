@@ -64,6 +64,9 @@ describe('LessonView completion flow', () => {
     renderLesson();
     answerSelfCheckCorrectly();
     expect(screen.getByTestId('lesson-count')).toHaveTextContent('0');
+    completeChallenge();
+    expect(screen.getByTestId('lesson-count')).toHaveTextContent('1');
+    expect(screen.getByText(/lesson complete/i)).toBeInTheDocument();
   });
 
   it('using the nudge caps nothing, but a self-check retry drops mastery to 2', () => {
