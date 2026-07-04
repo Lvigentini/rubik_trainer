@@ -3,10 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import { ProgressProvider } from './progress/ProgressContext';
+import { InMemoryProgressStore } from './progress/inMemoryStore';
 import { CHALLENGES } from './challenges';
 import { getStageById } from './learningPath';
 import { getSelfCheckById } from './selfChecks';
-import type { Turn } from './cube';
+import { PLAY_MODES } from './components/play/modes';
+import { invertAlgorithm, type Turn } from './cube';
+
+function renderAppWithStore(store: InMemoryProgressStore, initialEntries: string[] = ['/']) {
+  return render(
+    <ProgressProvider store={store}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <App />
+      </MemoryRouter>
+    </ProgressProvider>,
+  );
+}
 
 function renderApp(initialEntries: string[] = ['/']) {
   return render(
@@ -97,9 +109,35 @@ describe('Learn page — guided discovery', () => {
   });
 });
 
-describe('Play page — scoring stays here', () => {
+describe('Play page — modes on the URL, honest scoring', () => {
   function navigateToPlay() {
     renderApp(['/play/free']);
+  }
+
+  const BAND_LABEL_BY_FACE: Record<string, RegExp> = {
+    U: /top row/i,
+    D: /bottom row/i,
+    L: /left column/i,
+    R: /right column/i,
+    F: /front layer/i,
+    B: /back layer/i,
+  };
+
+  function performTurn(turn: Turn) {
+    const bar = within(screen.getByTestId('band-reference-bar'));
+    fireEvent.click(bar.getByRole('button', { name: BAND_LABEL_BY_FACE[turn[0]] }));
+    if (turn.endsWith('2')) {
+      fireEvent.click(bar.getByRole('button', { name: /turn selected layer 180 degrees/i }));
+    } else if (turn.endsWith("'")) {
+      fireEvent.click(bar.getByRole('button', { name: /counter-clockwise/i }));
+    } else {
+      fireEvent.click(bar.getByRole('button', { name: /turn selected layer clockwise$/i }));
+    }
+  }
+
+  function readMoveHistoryTurns(): Turn[] {
+    const history = within(screen.getByTestId('move-history'));
+    return history.getAllByText(/^[URFDLB][2']?$/).map((el) => el.textContent as Turn);
   }
 
   it('has 3D cube and game mode controls', () => {
@@ -112,10 +150,73 @@ describe('Play page — scoring stays here', () => {
     expect(screen.queryByRole('button', { name: /U face/i })).not.toBeInTheDocument();
   });
 
-  it('shows scoring in guided mode', () => {
+  it('mode picker navigates via the URL and keeps ?skill=', () => {
+    renderApp(['/play/free?skill=2x2-orientation']);
+    expect(screen.getByText(/reinforcing: orientation and notation/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: PLAY_MODES.coach.label }));
+
+    expect(screen.getByRole('heading', { name: /solve coach/i })).toBeInTheDocument();
+    expect(screen.getByText(/reinforcing: orientation and notation/i)).toBeInTheDocument();
+  });
+
+  it('shows no score panel before a completion event in Solve Coach', () => {
     renderApp(['/play/coach']);
 
-    expect(screen.getByText('Completion score preview')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Scoring' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/completion score/i)).not.toBeInTheDocument();
+  });
+
+  it('Solve Coach shows a real score and records a session once the cube is solved', () => {
+    const store = new InMemoryProgressStore();
+    renderAppWithStore(store, ['/play/coach']);
+
+    fireEvent.click(screen.getByRole('button', { name: /new scramble/i }));
+    fireEvent.click(screen.getByRole('button', { name: /finish known solve/i }));
+
+    expect(screen.getByRole('heading', { name: 'Scoring' })).toBeInTheDocument();
+    expect(screen.getByText(/completion score/i)).toBeInTheDocument();
+    expect(store.getSnapshot().practice.totalSessions).toBe(1);
+    expect(store.getSnapshot().practice.totalMoves).toBeGreaterThan(0);
+  });
+
+  it('Free Play only records a session when the timer stops on a solved cube', () => {
+    const store = new InMemoryProgressStore();
+    renderAppWithStore(store, ['/play/free']);
+
+    fireEvent.click(screen.getByRole('button', { name: /new scramble/i }));
+    const scrambleTurns = readMoveHistoryTurns();
+    const solutionTurns = invertAlgorithm(scrambleTurns);
+
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
+    solutionTurns.forEach(performTurn);
+    fireEvent.click(screen.getByRole('button', { name: /stop timer/i }));
+
+    expect(screen.getByText(/solved!/i)).toBeInTheDocument();
+    expect(store.getSnapshot().practice.totalSessions).toBe(1);
+    expect(store.getSnapshot().practice.bestTimeMsBySize['2x2']).toBeDefined();
+  });
+
+  it('Free Play records nothing when the timer stops on an unsolved cube', () => {
+    const store = new InMemoryProgressStore();
+    renderAppWithStore(store, ['/play/free']);
+
+    fireEvent.click(screen.getByRole('button', { name: /new scramble/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /stop timer/i }));
+
+    expect(screen.queryByText(/solved!/i)).not.toBeInTheDocument();
+    expect(store.getSnapshot().practice.totalSessions).toBe(0);
+  });
+
+  it('Scan Coach renders palette, editors, and warnings in one unified column', () => {
+    renderApp(['/play/scan']);
+
+    const panel = screen.getByRole('heading', { name: /three-face assistant/i }).closest('aside')!;
+    const scoped = within(panel);
+    expect(scoped.getByRole('button', { name: /import visible u\/f\/r from cube/i })).toBeInTheDocument();
+    expect(scoped.getByText(/U face/i)).toBeInTheDocument();
+    expect(scoped.getByText(/incomplete/i)).toBeInTheDocument();
   });
 
   it('lets 3x3 learners select a middle row band and turn it as E', () => {

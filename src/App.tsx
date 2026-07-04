@@ -4,12 +4,10 @@ import { AppLayout } from './app/AppLayout';
 import { HomePage } from './components/HomePage';
 import { LearnPage } from './components/LearnPage';
 import { PracticePage } from './components/PracticePage';
+import { PLAY_MODE_ORDER, type PlayMode } from './components/play/modes';
 import { getStageById, type LearningStageId } from './learningPath';
 import { useProgress } from './progress/ProgressContext';
 import { getCurrentStageId } from './progress/unlocks';
-
-const PLAY_MODE_MAP = { free: 'practice', coach: 'guided', scan: 'scan' } as const;
-type PlayModeParam = keyof typeof PLAY_MODE_MAP;
 
 function HomeRoute() {
   const navigate = useNavigate();
@@ -43,15 +41,9 @@ function LearnRoute() {
 function PlayRoute() {
   const { mode } = useParams();
   const [searchParams] = useSearchParams();
-  if (!mode || !(mode in PLAY_MODE_MAP)) return <Navigate to="/play/free" replace />;
+  if (!mode || !PLAY_MODE_ORDER.includes(mode as PlayMode)) return <Navigate to="/play/free" replace />;
   const skill = searchParams.get('skill') ?? undefined;
-  return (
-    <PracticePage
-      key={mode}
-      initialMode={PLAY_MODE_MAP[mode as PlayModeParam]}
-      skillContext={skill}
-    />
-  );
+  return <PracticePage key={`${mode}-${skill ?? ''}`} mode={mode as PlayMode} skillContext={skill} />;
 }
 
 function App() {
