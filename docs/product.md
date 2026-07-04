@@ -15,18 +15,16 @@ Version: 0.2.0
 
 ### Home
 
-Purpose: sell the product — agent-supported coaching, scan support, pathway entry.
+Purpose: orient the learner — explain the product on first visit, resume progress after.
 
 Should include:
 
-- Hero: "Learn the cube with agent-supported guidance watching your progress."
-- Three-panel scan visual (Show 3 faces / Coach diagnoses / Practise the skill)
-- Skills pathway mention and CTA
-- Practice framed as reinforcement (tertiary action)
-- Feature cards: Visual Scan Coach, Skills Pathway, Practice Loops
+- First visit (no lessons completed): one-screen explanation, three-panel concept visual, primary CTA "Start learning", secondary "Free play"
+- Returning: resume card ("Continue: Lesson N — Title") driven by real progress, overall + group progress, streak, secondary tiles for the three Play modes
 
 Should not include:
 
+- Marketing-scale hero or feature cards
 - Cube size selector
 - Generic stats row
 - Score tables
@@ -61,31 +59,28 @@ Should not include:
 
 ### Play
 
-Purpose: actual game/practice with scoring.
+Purpose: practice with honest feedback. Mode lives in the URL (/play/free|coach|scan).
 
 Should include:
 
-- Cube size selection
-- Game mode selection
-- 3D cube surface
-- Move controls
-- Timer
-- Scramble/reset
-- Scoring and bonuses
-- Scan assistant when scan mode is active
-- Skill context when launched from Learn ("Reinforcing: [skill name]")
+- Mode picker (Free Play / Solve Coach / Scan Coach) with one-line descriptions; switching navigates
+- Cube size selection, 3D cube, move controls, undo/redo, keyboard, timer, scramble/reset
+- Scoring ONLY after a real completion event (coach: cube solved; free play: timer stopped on solved cube) with real values; sessions recorded to progress
+- Scan Coach: single-column three-face assistant with honest limitations
+- Skill context when launched from Learn ("Reinforcing: [skill name]"; coach scramble uses that lesson's challenge setup)
 
 ## Game modes
 
-### Practice
+### Free Play
 
-Free move practice with scramble and inverse-solution assistance.
+Sandbox: scramble, optional timer, solved-detection records the session and best time.
 
-### Guided
+### Solve Coach
 
-Lesson-aware coaching with skill context from the learning pathway.
+Step-through of the known solution (inverse scramble) with per-move assistance; real score card on completion.
 
-### Scan
+
+### Scan Coach
 
 Manual state-gathering assistant. Three visible faces provide partial guidance.
 Honest about limitations: "agent-supported guidance" / "scan coach prototype" until backend vision/LLM support exists.
