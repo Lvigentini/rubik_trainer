@@ -1,5 +1,5 @@
 /* src/styles/base.css — app shell: topbar, nav, progress chip. */
-.app-shell {
+.shell-root {
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
   padding: 16px 0 48px;
