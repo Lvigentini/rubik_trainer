@@ -51,10 +51,14 @@ export class InMemoryProgressStore implements ProgressStore {
   completeLesson(stageId: LearningStageId, mastery: Mastery, hintsUsed: number): void {
     this.update((draft) => {
       const existing = draft.lessons[stageId];
+      // Mastery is improve-only (never regresses on a redo); hintsUsed mirrors
+      // that — it's only overwritten when this attempt actually raises mastery,
+      // so a worse-mastery redo can't erase the hint count behind the best result.
+      const improved = !existing || mastery > existing.mastery;
       draft.lessons[stageId] = {
         completedAt: this.now().toISOString(),
         mastery: existing ? (Math.max(existing.mastery, mastery) as Mastery) : mastery,
-        hintsUsed,
+        hintsUsed: improved ? hintsUsed : existing!.hintsUsed,
         attempts: (existing?.attempts ?? 0) + 1,
       };
       this.touchStreak(draft);

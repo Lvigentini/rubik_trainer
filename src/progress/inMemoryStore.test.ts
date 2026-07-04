@@ -33,6 +33,18 @@ describe('InMemoryProgressStore — lessons', () => {
     expect(lesson?.attempts).toBe(2);
   });
 
+  it('only overwrites hintsUsed when the redo actually improves mastery', () => {
+    const { store } = makeStore();
+    store.completeLesson('2x2-orientation', 3, 0);
+    store.completeLesson('2x2-orientation', 1, 3); // worse mastery — hintsUsed must not regress
+    expect(store.getSnapshot().lessons['2x2-orientation']?.hintsUsed).toBe(0);
+
+    store.completeLesson('2x2-first-face', 1, 2);
+    store.completeLesson('2x2-first-face', 3, 5); // strictly better mastery — hintsUsed updates
+    const lesson = store.getSnapshot().lessons['2x2-first-face'];
+    expect(lesson).toMatchObject({ mastery: 3, hintsUsed: 5 });
+  });
+
   it('does not mutate previously returned snapshots', () => {
     const { store } = makeStore();
     const before = store.getSnapshot();

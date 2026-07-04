@@ -6,7 +6,7 @@ import {
 } from '../learningPath';
 import type { ProgressSnapshot } from './types';
 
-const ORDERED_STAGES = [...LEARNING_STAGES].sort((a, b) => a.level - b.level);
+export const ORDERED_STAGES = [...LEARNING_STAGES].sort((a, b) => a.level - b.level);
 
 export function isStageCompleted(stageId: LearningStageId, snapshot: ProgressSnapshot): boolean {
   return snapshot.lessons[stageId] !== undefined;

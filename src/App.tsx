@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import './styles.css';
 import { AppLayout } from './app/AppLayout';
 import { HomePage } from './components/HomePage';
 import { LearnPage } from './components/LearnPage';

@@ -1,6 +1,6 @@
 /* src/styles/tokens.css — design tokens: playful & tactile, cube-derived accents.
-   Dark palette is defined but only activates via [data-theme='dark'];
-   the toggle ships in Phase 4 once all pages consume tokens. */
+   Dark palette activates via [data-theme='dark'] (explicit choice, ThemeToggle)
+   or automatically via prefers-color-scheme when no explicit choice is stored. */
 :root {
   /* Cube sticker palette — the brand */
   --sticker-green: #17a34a;
@@ -56,4 +56,24 @@
   --text-muted: #8f887b;
   --shadow-card: 0 2px 0 rgba(0, 0, 0, 0.5);
   --shadow-card-raised: 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* System-dark default: applies whenever the OS prefers dark AND the user
+   hasn't made an explicit choice. An explicit [data-theme='light'] always
+   wins (this selector simply doesn't match it); an explicit
+   [data-theme='dark'] also matches the block above, redundantly but
+   harmlessly. Kept byte-identical to the block above on purpose. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --surface-page: #171512;
+    --surface-raised: #211e1a;
+    --surface-sunken: #1b1916;
+    --border-strong: #3b362e;
+    --border-soft: #2c2823;
+    --text-strong: #f3efe8;
+    --text-body: #cfc9be;
+    --text-muted: #8f887b;
+    --shadow-card: 0 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-card-raised: 0 4px 0 rgba(0, 0, 0, 0.5);
+  }
 }

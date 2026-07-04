@@ -225,6 +225,14 @@ export const LEARNING_STAGES: LearningStage[] = [
   },
 ];
 
+/** Display labels for each curriculum group — the single source of truth
+ * consumed by LearnSidebar, LessonView, and HomePage (previously duplicated
+ * locally in each). */
+export const GROUP_LABELS: Record<LearningStage['group'], string> = {
+  '2x2-foundation': '2×2 Foundation',
+  '3x3-beginner': '3×3 Beginner',
+};
+
 export function getStagesForGroup(group: LearningStage['group']): LearningStage[] {
   return LEARNING_STAGES.filter((stage) => stage.group === group);
 }

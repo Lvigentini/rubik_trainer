@@ -35,4 +35,27 @@ describe('LearnSidebar', () => {
     expect(sidebar.getByRole('link', { name: /build one complete face/i }).className).toContain('unlocked');
     expect(sidebar.getByRole('link', { name: /white cross/i }).className).toContain('locked');
   });
+
+  it('locked stages are marked aria-disabled with a "Complete X to unlock" title', () => {
+    renderSidebar();
+    const sidebar = within(screen.getByTestId('learn-sidebar'));
+    const locked = sidebar.getByRole('link', { name: /build one complete face/i });
+    expect(locked).toHaveAttribute('aria-disabled', 'true');
+    expect(locked).toHaveAttribute('title', expect.stringMatching(/complete orientation and notation to unlock/i));
+  });
+
+  it('unlocked/done stages are not marked aria-disabled', () => {
+    const store = new InMemoryProgressStore();
+    store.completeLesson('2x2-orientation', 3, 0);
+    renderSidebar(store);
+    const sidebar = within(screen.getByTestId('learn-sidebar'));
+    expect(sidebar.getByRole('link', { name: /orientation and notation/i })).toHaveAttribute('aria-disabled', 'false');
+  });
+
+  it('uses a proper (non-skipped) heading level for group headers', () => {
+    renderSidebar();
+    const sidebar = within(screen.getByTestId('learn-sidebar'));
+    expect(sidebar.getByRole('heading', { level: 2, name: '2×2 Foundation' })).toBeInTheDocument();
+    expect(sidebar.getByRole('heading', { level: 2, name: '3×3 Beginner' })).toBeInTheDocument();
+  });
 });

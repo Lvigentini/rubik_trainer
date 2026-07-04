@@ -23,11 +23,17 @@ export function LearnPage({ stageId, onPractice }: Props) {
       <button
         className="curriculum-toggle"
         aria-expanded={drawerOpen}
+        aria-controls="curriculum-drawer"
         onClick={() => setDrawerOpen((open) => !open)}
       >
         <PanelLeft size={16} /> Curriculum
       </button>
-      <div className={`learn-sidebar-wrap ${drawerOpen ? 'open' : ''}`}>
+      <div
+        id="curriculum-drawer"
+        className={`learn-sidebar-wrap ${drawerOpen ? 'open' : ''}`}
+        role="region"
+        aria-label="Curriculum drawer"
+      >
         <LearnSidebar currentStageId={stage.id} onNavigate={() => setDrawerOpen(false)} />
       </div>
       <main className="learn-main">

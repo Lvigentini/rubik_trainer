@@ -105,7 +105,6 @@ const DOWN: Direction = { axis: 'y', sign: -1 };
 function whiteCross(state: CubeState): boolean {
   const crossColor = centerColor(state, UP);
   const upEdges = faceStickers(state, UP).filter(isEdgeCubie);
-  if (upEdges.length !== 4) return false;
   if (!upEdges.every((s) => s.color === crossColor)) return false;
   // side sticker of each up-layer edge cubie must match its side centre
   return matchesCenters(state, (s) => isEdgeCubie(s) && s.y === 1 && normalOf(s).axis !== 'y');

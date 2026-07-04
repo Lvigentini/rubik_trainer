@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { LearningStage } from '../../learningPath';
+import { GROUP_LABELS, type LearningStage } from '../../learningPath';
 import { getSelfCheckById } from '../../selfChecks';
 import { getVideosForStage } from '../../videos';
 import { calculateMastery } from '../../progress/mastery';
@@ -12,8 +12,6 @@ import { ChallengePanel } from './ChallengePanel';
 import { CompletionCelebration } from './CompletionCelebration';
 import { HintLadder } from './HintLadder';
 import { MasteryBadge } from './MasteryBadge';
-
-const GROUP_LABELS = { '2x2-foundation': '2×2 Foundation', '3x3-beginner': '3×3 Beginner' } as const;
 
 export function LessonView({ stage, onPractice }: { stage: LearningStage; onPractice: (stageId: string) => void }) {
   const store = useProgressStore();

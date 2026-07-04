@@ -1,0 +1,504 @@
+/* src/styles/components.css — shared widget-level styles used by both Learn
+   and Play (and anywhere else a page reaches for a plain button or panel).
+   Everything here is on tokens; the only "raw" colors are neutral black/white
+   overlays for shadows/glints (theme-agnostic) and the cube sticker fills,
+   which are inline JS styles (COLORS map), untouched. Page chrome (header,
+   mode picker, page layout) stays in play.css/home.css/learn.css. */
+
+/* --- Generic interactive elements --- */
+button {
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--duration-quick) var(--ease-spring),
+    background var(--duration-quick) ease, box-shadow var(--duration-quick) ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-raised);
+  border-color: var(--color-accent);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-card-raised);
+}
+
+button.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 85%, black);
+  border-color: color-mix(in srgb, var(--color-accent) 85%, black);
+}
+
+button.primary:active:not(:disabled) {
+  box-shadow: none;
+}
+
+.panel {
+  padding: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.eyebrow,
+.field-label {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* --- 3D cube: geometry (sizes/perspective/translateZ/grid layout) is kept
+   byte-faithful to the legacy engine — only colors/borders/shadows move
+   onto tokens. Shared by Learn's ChallengePanel and every Play mode. --- */
+.cube-stage {
+  position: relative;
+  height: 360px;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, var(--surface-sunken), var(--surface-page));
+}
+
+.cube {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  transform-style: preserve-3d;
+  transition: transform var(--duration-move) ease;
+}
+
+.cube-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 4px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-raised) 80%, transparent);
+  cursor: pointer;
+  transition: box-shadow 150ms ease;
+}
+
+.cube-face:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-raised) 80%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.cube-face.selected-face {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-raised) 80%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.cube-face.cube-size-2x2 { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; }
+.cube-face.cube-size-3x3 { grid-template-columns: repeat(3, 1fr); }
+
+.cube-face-u { transform: rotateX(90deg) translateZ(80px); }
+.cube-face-r { transform: rotateY(90deg) translateZ(80px); }
+.cube-face-f { transform: translateZ(80px); }
+.cube-face-d { transform: rotateX(-90deg) translateZ(80px); }
+.cube-face-l { transform: rotateY(-90deg) translateZ(80px); }
+.cube-face-b { transform: rotateY(180deg) translateZ(80px); }
+
+.sticker,
+.scan-sticker {
+  border: 1px solid color-mix(in srgb, var(--text-strong) 8%, transparent);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--surface-raised) 45%, transparent),
+    0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.sticker.highlighted {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--surface-raised) 45%, transparent);
+  transform: scale(1.08);
+  z-index: 1;
+}
+
+.cube-layer-grabbers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.layer-grabber {
+  position: absolute;
+  pointer-events: auto;
+  min-height: 0;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.layer-grabber:hover,
+.layer-grabber.selected {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+.row-grabber { left: 22%; width: 56%; height: 14%; }
+.row-grabber.top-row { top: 22%; }
+.row-grabber.middle-row { top: 43%; height: 14%; }
+.row-grabber.bottom-row { top: 64%; }
+
+.col-grabber { top: 22%; width: 14%; height: 56%; }
+.col-grabber.left-column { left: 22%; }
+.col-grabber.middle-column { left: 43%; width: 14%; }
+.col-grabber.right-column { left: 64%; }
+
+.cube-rotate-arrows {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.cube-arrow {
+  width: 38px;
+  height: 38px;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-card);
+}
+
+.cube-arrow:hover {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-raised));
+  color: var(--color-accent);
+  transform: scale(1.08);
+}
+
+@media (max-width: 680px) {
+  .cube-stage { height: 300px; }
+  .cube { width: 120px; height: 120px; }
+  .cube-face-u { transform: rotateX(90deg) translateZ(60px); }
+  .cube-face-r { transform: rotateY(90deg) translateZ(60px); }
+  .cube-face-f { transform: translateZ(60px); }
+  .cube-face-d { transform: rotateX(-90deg) translateZ(60px); }
+  .cube-face-l { transform: rotateY(-90deg) translateZ(60px); }
+  .cube-face-b { transform: rotateY(180deg) translateZ(60px); }
+}
+
+/* --- Band reference bar: layer-select + turn controls under the cube --- */
+.band-reference-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+}
+
+.band-reference-labels,
+.band-reference-arrows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.band-reference-labels button,
+.band-reference-arrows button {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text-body);
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.band-reference-labels button.selected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--surface-raised));
+  color: var(--color-accent);
+}
+
+.band-reference-arrows button:hover {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-raised));
+  color: var(--color-accent);
+}
+
+@media (max-width: 680px) {
+  .band-reference-bar { flex-direction: column; align-items: stretch; }
+}
+
+/* --- Scan Coach face editors: palette, per-face grids, warnings --- */
+.palette {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.palette button {
+  min-height: 42px;
+  color: var(--text-strong);
+  font-weight: 900;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--surface-raised) 60%, transparent);
+}
+
+.palette button.selected {
+  outline: 4px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+.scan-faces {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 680px) {
+  .scan-faces { grid-template-columns: 1fr; }
+}
+
+.face-editor {
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+}
+
+.face-editor-title {
+  margin-bottom: 10px;
+  color: var(--text-strong);
+  font-weight: 900;
+}
+
+.face-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.face-grid-4 { grid-template-columns: repeat(2, 1fr); }
+
+.scan-sticker {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0;
+  color: var(--text-muted);
+  font-weight: 900;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  box-shadow: none;
+}
+
+.scan-warnings {
+  margin: 16px 0 0;
+  padding-left: 20px;
+  color: var(--text-body);
+}
+
+.scan-warnings li { margin-bottom: 6px; }
+
+.progress-bar {
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+}
+
+/* --- Self-check cards: correct/incorrect map to success/danger tokens with
+   text-strong (theme-flipped) foreground, so contrast holds in both themes. --- */
+.self-check-card {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+}
+
+.self-check-card h4 {
+  margin: 0 0 10px;
+  color: var(--text-strong);
+}
+
+.self-check-options {
+  display: grid;
+  gap: 8px;
+}
+
+.self-check-option {
+  justify-content: flex-start;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  color: var(--text-body);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.self-check-option:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-raised));
+}
+
+.self-check-option.correct {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 16%, var(--surface-raised));
+  color: var(--text-strong);
+}
+
+.self-check-option.incorrect {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--surface-raised));
+  color: var(--text-strong);
+}
+
+.self-check-option.correct-answer {
+  border-color: var(--color-success);
+  border-style: dashed;
+}
+
+.self-check-feedback {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.self-check-feedback.correct {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  color: var(--text-strong);
+}
+
+.self-check-feedback.incorrect {
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  color: var(--text-strong);
+}
+
+/* --- Video reference cards --- */
+.video-cards {
+  display: grid;
+  gap: 10px;
+}
+
+.video-reference-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--duration-quick) ease, transform var(--duration-quick) var(--ease-spring);
+}
+
+.video-reference-card:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.video-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.video-card-meta strong { color: var(--color-accent); }
+.video-card-meta span { color: var(--text-muted); font-size: 0.85rem; }
+
+.video-card-note {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .cube,
+  .cube-face,
+  .layer-grabber,
+  .video-reference-card {
+    transition: none;
+  }
+}

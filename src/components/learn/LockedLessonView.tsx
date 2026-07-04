@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Lock } from 'lucide-react';
-import { LEARNING_STAGES, type LearningStage } from '../../learningPath';
+import type { LearningStage } from '../../learningPath';
 import { useProgress, useProgressStore } from '../../progress/ProgressContext';
-import { isStageCompleted } from '../../progress/unlocks';
+import { isStageCompleted, ORDERED_STAGES } from '../../progress/unlocks';
 import { getSelfCheckById } from '../../selfChecks';
 import { SelfCheckCard } from '../SelfCheckCard';
 
@@ -15,8 +15,7 @@ export function LockedLessonView({ stage }: { stage: LearningStage }) {
   const [failed, setFailed] = useState(false);
 
   const selfChecks = stage.selfCheckIds.map(getSelfCheckById).filter(Boolean);
-  const ordered = [...LEARNING_STAGES].sort((a, b) => a.level - b.level);
-  const prerequisite = ordered
+  const prerequisite = ORDERED_STAGES
     .filter((s) => s.level < stage.level)
     .reverse()
     .find((s) => !isStageCompleted(s.id, snapshot));

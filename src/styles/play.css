@@ -1,11 +1,9 @@
 /* src/styles/play.css — Play page chrome: header, mode picker, game layout,
    metric/score cards, move history. Every selector is scoped under
-   `.page-stack` (the root PracticePage already renders) so it outranks the
-   same-named legacy rules in styles.css on specificity alone, regardless of
-   CSS import order. The raw 3D cube box (.cube-stage/.cube/.cube-face/
-   .sticker/.band-reference-bar/.face-editor family) is left on legacy
-   styles.css here — it's explicitly migrated into components.css in the
-   legacy-retirement task, and touching it twice would be wasted work. */
+   `.page-stack` (the root PracticePage already renders). The raw 3D cube box
+   (.cube-stage/.cube/.cube-face/.sticker/.band-reference-bar/.face-editor
+   family) lives in components.css — it's shared with Learn's ChallengePanel,
+   which never renders inside `.page-stack`. */
 
 .page-stack { display: grid; gap: 22px; }
 

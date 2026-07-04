@@ -101,6 +101,15 @@ describe('Learn page — guided discovery', () => {
     expect(sidebar.getByText(/3×3 Beginner/i)).toBeInTheDocument();
   });
 
+  it('the curriculum drawer toggle is programmatically associated with the drawer region', () => {
+    navigateToLearn();
+    const toggle = screen.getByRole('button', { name: /curriculum/i });
+    const controlsId = toggle.getAttribute('aria-controls');
+    expect(controlsId).toBeTruthy();
+    const drawer = screen.getByRole('region', { name: /curriculum drawer/i });
+    expect(drawer.id).toBe(controlsId);
+  });
+
   it('opens on the challenge, with hints hidden until asked', () => {
     navigateToLearn();
     expect(screen.getByTestId('challenge-panel')).toBeInTheDocument();

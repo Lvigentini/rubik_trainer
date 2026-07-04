@@ -2,6 +2,7 @@ import { BookOpen, Gamepad2 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useProgress } from '../progress/ProgressContext';
 import { getCompletedCount } from '../progress/unlocks';
+import { ThemeToggle } from './ThemeToggle';
 
 export function AppLayout() {
   const snapshot = useProgress();
@@ -16,6 +17,7 @@ export function AppLayout() {
           <NavLink to="/play"><Gamepad2 size={16} /> Play</NavLink>
         </nav>
         <span className="progress-chip" title="Skills completed">{done}/{total} skills</span>
+        <ThemeToggle />
       </header>
       <Outlet />
     </div>

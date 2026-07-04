@@ -1,7 +1,6 @@
 /* src/styles/home.css — resume-driven Home. Fresh class names throughout
-   (no `.home-page`/`.home-hero`/`.feature-card`) so nothing here fights the
-   legacy styles.css rules of the same name; those go dead once HomePage
-   stops rendering them and are deleted in the legacy-retirement task. */
+   (no `.home-page`/`.home-hero`/`.feature-card`) — the old HomePage markup
+   and its legacy stylesheet rules of the same name are both gone. */
 
 .home-view {
   display: grid;

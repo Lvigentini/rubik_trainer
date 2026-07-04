@@ -34,7 +34,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
   const [demoCursor, setDemoCursor] = useState<number | null>(null);
   const firedRef = useRef(false);
 
-  const stateGoalMet = !isSequence && challenge.goal !== 'sequence' && isGoalMet(challenge.goal, cube);
+  const stateGoalMet = !isSequence && isGoalMet(challenge.goal as Exclude<typeof challenge.goal, 'sequence'>, cube);
   const goalMet = isSequence ? matched === target.length && target.length > 0 : stateGoalMet;
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
   const grid = useMemo(() => toFaceGrid(cube), [cube]);
 
   return (
-    <section className={`challenge-panel ${goalMet ? 'goal-met' : ''}`} data-testid="challenge-panel">
+    <section className={`challenge-panel${goalMet ? ' goal-met' : ''}`} data-testid="challenge-panel">
       <header className="challenge-header">
         <p className="eyebrow">Try it first</p>
         <p className="challenge-goal-text">{challenge.goalText}</p>

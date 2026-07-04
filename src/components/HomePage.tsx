@@ -1,14 +1,10 @@
 import { ArrowRight, Camera, Flame, Gamepad2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getStageById } from '../learningPath';
+import { GROUP_LABELS, getStageById } from '../learningPath';
 import { useProgress } from '../progress/ProgressContext';
 import { getCompletedCount, getCurrentStageId, getGroupProgress } from '../progress/unlocks';
 import { PLAY_MODE_ORDER, PLAY_MODES, type PlayMode } from './play/modes';
 import { ScanCoachPreview } from './ScanCoachPreview';
-
-// Duplicated from LessonView's local map (consolidation into learningPath.ts
-// is a deferred Task 3 cleanup — see plan) rather than exported today.
-const GROUP_LABELS = { '2x2-foundation': '2×2 Foundation', '3x3-beginner': '3×3 Beginner' } as const;
 
 const MODE_ICON: Record<PlayMode, typeof Gamepad2> = {
   free: Gamepad2,
