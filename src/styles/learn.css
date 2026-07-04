@@ -1,0 +1,257 @@
+/* src/styles/learn.css — Learn layout, sidebar sticker-sheet, lesson beats. */
+
+.learn-layout {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.curriculum-toggle { display: none; }
+
+/* --- Sidebar: the sticker sheet --- */
+.learn-sidebar {
+  position: sticky;
+  top: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+  display: grid;
+  gap: 18px;
+}
+
+.sidebar-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sidebar-group-header h3 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.sidebar-group-progress {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sidebar-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+.sidebar-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-body);
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: background var(--duration-quick) ease;
+}
+
+.sidebar-stage:hover { background: var(--surface-sunken); }
+.sidebar-stage.current { background: var(--surface-sunken); outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.sidebar-stage.locked { color: var(--text-muted); }
+
+.stage-chip {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-body);
+}
+
+.sidebar-stage.done .stage-chip {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--text-on-accent);
+}
+
+.sidebar-stage.locked .stage-chip { background: transparent; }
+
+.stage-title { flex: 1; min-width: 0; }
+
+/* --- Mastery cubies --- */
+.mastery-badge { display: inline-flex; gap: 3px; }
+.mastery-cubie {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+}
+.mastery-cubie.earned { background: var(--sticker-yellow); border-color: var(--sticker-yellow); }
+
+/* --- Lesson --- */
+.lesson-view { display: grid; gap: 20px; }
+.lesson-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  color: var(--text-strong);
+}
+.lesson-skill { color: var(--text-body); margin: 0; }
+.lesson-completed-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  color: var(--text-body);
+  font-size: 0.88rem;
+}
+
+/* --- Challenge panel + solve flash signature --- */
+.challenge-panel {
+  background: var(--surface-raised);
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.challenge-goal-text { font-size: 1.05rem; font-weight: 600; color: var(--text-strong); margin: 0; }
+.challenge-cube { display: grid; gap: 12px; justify-items: center; }
+.challenge-status { min-height: 24px; color: var(--text-body); }
+.challenge-panel.goal-met { border-color: var(--color-success); }
+.challenge-panel.goal-met .challenge-status strong { color: var(--color-success); }
+.challenge-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@keyframes solve-flash {
+  0% { border-color: var(--sticker-green); }
+  18% { border-color: var(--sticker-red); }
+  36% { border-color: var(--sticker-blue); }
+  54% { border-color: var(--sticker-orange); }
+  72% { border-color: var(--sticker-yellow); }
+  90% { border-color: var(--sticker-white); }
+  100% { border-color: var(--color-success); }
+}
+.challenge-panel.goal-met { animation: solve-flash 900ms ease-out 1; }
+
+/* --- Hint ladder --- */
+.hint-ladder { display: grid; gap: 10px; }
+.hint {
+  background: var(--surface-raised);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--text-body);
+}
+.hint p { margin: 0 0 8px; }
+.hint p:last-child { margin-bottom: 0; }
+.lesson-guide h3 { font-family: var(--font-display); font-size: 1rem; margin: 12px 0 6px; }
+.lesson-guide .lesson-mistake {
+  border-left: 3px solid var(--color-warning);
+  padding-left: 12px;
+  margin-top: 10px;
+}
+
+/* --- Self-checks / completion --- */
+.lesson-self-checks h2, .lesson-complete h2, .lesson-videos h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+  color: var(--text-strong);
+}
+
+.lesson-complete {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 2px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.lesson-complete-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  text-decoration: none;
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+/* --- Celebration (decorative) --- */
+.celebration { position: absolute; inset: 0; pointer-events: none; }
+.celebration-sticker {
+  position: absolute;
+  top: -12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: sticker-fall 1400ms ease-in 1 forwards;
+}
+.sticker-green { background: var(--sticker-green); }
+.sticker-red { background: var(--sticker-red); }
+.sticker-blue { background: var(--sticker-blue); }
+.sticker-orange { background: var(--sticker-orange); }
+.sticker-yellow { background: var(--sticker-yellow); }
+.sticker-white { background: var(--sticker-white); border: 1px solid var(--border-strong); }
+.fall-0 { left: 8%; animation-delay: 0ms; }
+.fall-1 { left: 28%; animation-delay: 120ms; }
+.fall-2 { left: 50%; animation-delay: 60ms; }
+.fall-3 { left: 70%; animation-delay: 180ms; }
+.fall-4 { left: 88%; animation-delay: 90ms; }
+@keyframes sticker-fall {
+  0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(140px) rotate(200deg); }
+}
+
+/* --- Locked lesson --- */
+.locked-lesson .locked-reason { color: var(--text-body); }
+.locked-actions { display: grid; gap: 8px; justify-items: start; }
+.locked-note { color: var(--text-muted); font-size: 0.88rem; margin: 0; }
+.testout-failed {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+/* --- Responsive: drawer under 900px --- */
+@media (max-width: 900px) {
+  .learn-layout { grid-template-columns: 1fr; }
+  .curriculum-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+  }
+  .learn-sidebar-wrap { display: none; }
+  .learn-sidebar-wrap.open { display: block; }
+  .learn-sidebar { position: static; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge-panel.goal-met { animation: none; }
+  .celebration-sticker { animation: none; opacity: 0; }
+  .sidebar-stage { transition: none; }
+}
