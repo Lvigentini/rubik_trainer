@@ -19,7 +19,7 @@ export const COLOR_LABELS: Record<FaceName, string> = {
   B: 'Blue',
 };
 
-export type Turn = `${FaceName}` | `${FaceName}'` | `${FaceName}2`;
+export type Turn = `${FaceName}` | `${FaceName}'` | `${FaceName}2` | `${'M' | 'E' | 'S'}` | `${'M' | 'E' | 'S'}'` | `${'M' | 'E' | 'S'}2` | `w${FaceName}` | `w${FaceName}'` | `w${FaceName}2` | `${FaceName}w` | `${FaceName}w'` | `${FaceName}w2`;
 export type Sticker = {
   id: string;
   color: FaceName;
@@ -44,13 +44,20 @@ const BASE_FACES: Record<FaceName, { normal: [number, number, number]; positions
   B: { normal: [0, 0, -1], positions: (row, col) => [1 - col, 1 - row, -1] },
 };
 
-const TURN_AXIS: Record<FaceName, { axis: 'x' | 'y' | 'z'; layer: -1 | 1; clockwiseQuarterTurns: 1 | -1 }> = {
+const TURN_AXIS: Record<FaceName, { axis: 'x' | 'y' | 'z'; layer: -1 | 0 | 1; clockwiseQuarterTurns: 1 | -1 }> = {
   U: { axis: 'y', layer: 1, clockwiseQuarterTurns: -1 },
   D: { axis: 'y', layer: -1, clockwiseQuarterTurns: 1 },
   R: { axis: 'x', layer: 1, clockwiseQuarterTurns: 1 },
   L: { axis: 'x', layer: -1, clockwiseQuarterTurns: -1 },
   F: { axis: 'z', layer: 1, clockwiseQuarterTurns: 1 },
   B: { axis: 'z', layer: -1, clockwiseQuarterTurns: -1 },
+};
+
+type SliceFace = 'M' | 'E' | 'S';
+const SLICE_AXIS: Record<SliceFace, { axis: 'x' | 'y' | 'z'; layer: 0; clockwiseQuarterTurns: 1 | -1 }> = {
+  M: { axis: 'x', layer: 0, clockwiseQuarterTurns: 1 },
+  E: { axis: 'y', layer: 0, clockwiseQuarterTurns: 1 },
+  S: { axis: 'z', layer: 0, clockwiseQuarterTurns: 1 },
 };
 
 function asCoord(value: number): -1 | 0 | 1 {
@@ -132,11 +139,7 @@ export function toFaceGrid(cube: CubeState): FaceGrid {
   return grid;
 }
 
-export function applyTurn(cube: CubeState, turn: Turn): CubeState {
-  const face = turn[0] as FaceName;
-  const suffix = turn.slice(1);
-  const spec = TURN_AXIS[face];
-  const multiplier = suffix === "'" ? -1 : suffix === '2' ? 2 : 1;
+function applyTurnSpec(cube: CubeState, spec: { axis: 'x' | 'y' | 'z'; layer: -1 | 0 | 1; clockwiseQuarterTurns: 1 | -1 }, multiplier: number): CubeState {
   const quarterTurns = spec.clockwiseQuarterTurns * multiplier;
 
   return cube.map((sticker) => {
@@ -145,6 +148,40 @@ export function applyTurn(cube: CubeState, turn: Turn): CubeState {
     const [nx, ny, nz] = rotateVector(spec.axis, quarterTurns, [sticker.nx, sticker.ny, sticker.nz]);
     return { ...sticker, x: asCoord(x), y: asCoord(y), z: asCoord(z), nx: asCoord(nx), ny: asCoord(ny), nz: asCoord(nz) };
   });
+}
+
+export function applyTurn(cube: CubeState, turn: Turn): CubeState {
+  if (turn.startsWith('w')) {
+    const face = turn[1] as FaceName;
+    const suffix = turn.slice(2);
+    const multiplier = suffix === "'" ? -1 : suffix === '2' ? 2 : 1;
+    const faceSpec = TURN_AXIS[face];
+    const sliceLayer: -1 | 0 | 1 = faceSpec.layer === 1 ? 0 : faceSpec.layer === -1 ? 0 : 0;
+    const sliceSpec = { axis: faceSpec.axis, layer: sliceLayer, clockwiseQuarterTurns: faceSpec.clockwiseQuarterTurns };
+    return applyTurnSpec(applyTurnSpec(cube, faceSpec, multiplier), sliceSpec, multiplier);
+  }
+
+  if (turn[0] === 'M' || turn[0] === 'E' || turn[0] === 'S') {
+    const slice = turn[0] as SliceFace;
+    const suffix = turn.slice(1);
+    const multiplier = suffix === "'" ? -1 : suffix === '2' ? 2 : 1;
+    return applyTurnSpec(cube, SLICE_AXIS[slice], multiplier);
+  }
+
+  const face = turn[0] as FaceName;
+  const suffix = turn.slice(1);
+  const multiplier = suffix === "'" ? -1 : suffix === '2' ? 2 : 1;
+  return applyTurnSpec(cube, TURN_AXIS[face], multiplier);
+}
+
+export function wideToDouble(turn: Turn): Turn | undefined {
+  if (!turn.startsWith('w')) return undefined;
+  const suffix = turn.slice(2);
+  return `${turn[1]}w${suffix}` as Turn;
+}
+
+export function formatTurn(turn: Turn): string {
+  return turn;
 }
 
 export function applyAlgorithm(cube: CubeState, algorithm: Turn[]): CubeState {

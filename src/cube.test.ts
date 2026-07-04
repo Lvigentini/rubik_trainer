@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyAlgorithm,
+  applyTurn,
   createSolvedCube,
   emptyPartialScan,
   generateScramble,
@@ -52,5 +53,31 @@ describe('cube engine', () => {
     const scan = emptyPartialScan();
     expect(scanCompleteness(scan)).toBe(0);
     expect(scanWarnings(scan).join(' ')).toContain('Three visible faces do not uniquely identify');
+  });
+});
+
+describe('slice and double-layer turns', () => {
+  it('M returns cube to solved after 4 quarter turns', () => {
+    const solved = createSolvedCube();
+    const after4 = applyAlgorithm(solved, ['M', 'M', 'M', 'M'] as Turn[]);
+    expect(toFaceGrid(after4)).toEqual(toFaceGrid(solved));
+  });
+
+  it('M2 is an involution on solved cube', () => {
+    const solved = createSolvedCube();
+    const afterM2Twice = applyAlgorithm(solved, ['M2', 'M2'] as Turn[]);
+    expect(toFaceGrid(afterM2Twice)).toEqual(toFaceGrid(solved));
+  });
+
+  it('wide U move turns the outer U layer and the slice below it', () => {
+    const solved = createSolvedCube();
+    const gridWide = toFaceGrid(applyTurn(solved, 'wU'));
+    // The top face remains white.
+    expect(new Set(gridWide.U)).toEqual(new Set(['U']));
+    // The front face's top two rows now contain colors from the R face (wide U pulls R to F).
+    expect(gridWide.F[0]).toBe('R');
+    expect(gridWide.F[3]).toBe('R');
+    // Bottom row is untouched by the wide move.
+    expect(gridWide.F[6]).toBe('F');
   });
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from './App';
 
@@ -117,11 +117,46 @@ describe('Play page — scoring stays here', () => {
 
     expect(screen.getByRole('heading', { name: '3D cube' })).toBeInTheDocument();
     expect(screen.getByText('Game mode')).toBeInTheDocument();
+    expect(screen.getByTestId('band-reference-bar')).toBeInTheDocument();
+    expect(screen.queryByText(/notation shortcut controls/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /U face/i })).not.toBeInTheDocument();
   });
 
   it('shows scoring in guided mode', () => {
     navigateToPlay();
 
     expect(screen.getByText('Completion score preview')).toBeInTheDocument();
+  });
+
+  it('lets 3x3 learners select a middle row band and turn it as E', () => {
+    navigateToPlay();
+
+    fireEvent.click(screen.getByRole('button', { name: /3×3 Classic Cube/i }));
+    const referenceBar = within(screen.getByTestId('band-reference-bar'));
+    fireEvent.click(referenceBar.getByRole('button', { name: /middle row/i }));
+    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+
+    const history = within(screen.getByTestId('move-history'));
+    expect(history.getByText('E')).toBeInTheDocument();
+  });
+
+  it('trims redo history when a new band move is made after undo', () => {
+    navigateToPlay();
+
+    const referenceBar = within(screen.getByTestId('band-reference-bar'));
+    fireEvent.click(referenceBar.getByRole('button', { name: /right column/i }));
+    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+    fireEvent.click(referenceBar.getByRole('button', { name: /top row/i }));
+    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /undo/i }));
+
+    fireEvent.click(referenceBar.getByRole('button', { name: /front layer/i }));
+    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+
+    const history = within(screen.getByTestId('move-history'));
+    expect(history.getByText('R')).toBeInTheDocument();
+    expect(history.getByText('F')).toBeInTheDocument();
+    expect(history.queryByText('U')).not.toBeInTheDocument();
   });
 });
