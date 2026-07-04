@@ -44,3 +44,8 @@ export function getGroupProgress(
   const done = stages.filter((stage) => isStageCompleted(stage.id, snapshot)).length;
   return { done, total: stages.length };
 }
+
+export function getNextStageId(stageId: LearningStageId): LearningStageId | undefined {
+  const index = ORDERED_STAGES.findIndex((stage) => stage.id === stageId);
+  return index === -1 ? undefined : ORDERED_STAGES[index + 1]?.id;
+}

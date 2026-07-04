@@ -5,6 +5,7 @@ import {
   getCompletedCount,
   getCurrentStageId,
   getGroupProgress,
+  getNextStageId,
   isStageUnlocked,
 } from './unlocks';
 import { emptySnapshot } from './types';
@@ -57,6 +58,12 @@ describe('isStageUnlocked', () => {
 });
 
 describe('selectors', () => {
+  it('getNextStageId walks level order and returns undefined at the end', () => {
+    expect(getNextStageId('2x2-orientation')).toBe('2x2-first-face');
+    expect(getNextStageId('2x2-last-corner-permute')).toBe('3x3-white-cross');
+    expect(getNextStageId('3x3-last-layer-finish')).toBeUndefined();
+  });
+
   it('getCurrentStageId returns the first incomplete stage in level order', () => {
     expect(getCurrentStageId(emptySnapshot())).toBe('2x2-orientation');
     expect(getCurrentStageId(snapshotWithCompleted(['2x2-orientation']))).toBe('2x2-first-face');
