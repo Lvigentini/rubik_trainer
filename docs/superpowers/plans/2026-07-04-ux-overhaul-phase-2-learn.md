@@ -1,6 +1,6 @@
 # UX Overhaul Phase 2 — Learn Experience Implementation Plan
 
-> **Status: EXECUTED 2026-07-05** on branch `ux-overhaul-p2` (tasks 1–9 complete, per-task reviews clean; amendments during execution: LessonView completion derives from committed store state via ref guard — the repo's `set-state-in-effect` lint rule forbids the planned `setRecorded`-in-effect; `.lesson-skill/.lesson-outcome` selectors scoped under `.lesson-view` to beat the legacy cascade).
+> **Status: EXECUTED 2026-07-05** on branch `ux-overhaul-p2` (tasks 1–9 complete, per-task reviews clean; amendments during execution: LessonView completion derives from committed store state via ref guard — the repo's `set-state-in-effect` lint rule forbids the planned `setRecorded`-in-effect; `.lesson-skill/.lesson-outcome` selectors scoped under `.lesson-view` to beat the legacy cascade; post-review hardening: drawer closes on lesson select, self-check options shuffle per attempt and no longer reveal the answer on a miss, app-level integration test pins the completion→unlock→chip flow).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
