@@ -1,0 +1,59 @@
+/* src/styles/tokens.css — design tokens: playful & tactile, cube-derived accents.
+   Dark palette is defined but only activates via [data-theme='dark'];
+   the toggle ships in Phase 4 once all pages consume tokens. */
+:root {
+  /* Cube sticker palette — the brand */
+  --sticker-green: #17a34a;
+  --sticker-red: #dc2f2f;
+  --sticker-blue: #2563eb;
+  --sticker-orange: #ea6a0c;
+  --sticker-yellow: #f5c518;
+  --sticker-white: #f8f7f4;
+
+  /* Semantic accents */
+  --color-accent: var(--sticker-blue);
+  --color-success: var(--sticker-green);
+  --color-danger: var(--sticker-red);
+  --color-warning: var(--sticker-orange);
+  --color-highlight: var(--sticker-yellow);
+
+  /* Warm neutral surfaces (light) */
+  --surface-page: #faf9f7;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1efea;
+  --border-strong: #d9d4ca;
+  --border-soft: #e8e5de;
+  --text-strong: #27221a;
+  --text-body: #4c463c;
+  --text-muted: #8b8478;
+  --text-on-accent: #ffffff;
+
+  /* Shape & depth — chunky, board-game tactile */
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --shadow-card: 0 2px 0 var(--border-strong);
+  --shadow-card-raised: 0 4px 0 var(--border-strong);
+
+  /* Type */
+  --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-quick: 140ms;
+  --duration-move: 260ms;
+}
+
+[data-theme='dark'] {
+  --surface-page: #171512;
+  --surface-raised: #211e1a;
+  --surface-sunken: #1b1916;
+  --border-strong: #3b362e;
+  --border-soft: #2c2823;
+  --text-strong: #f3efe8;
+  --text-body: #cfc9be;
+  --text-muted: #8f887b;
+  --shadow-card: 0 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-card-raised: 0 4px 0 rgba(0, 0, 0, 0.5);
+}

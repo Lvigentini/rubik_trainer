@@ -1,0 +1,76 @@
+/* src/styles/base.css — app shell: topbar, nav, progress chip. */
+.app-shell {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 16px 0 48px;
+  font-family: var(--font-body);
+}
+
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  margin-bottom: 24px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.shell-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-strong);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.shell-nav {
+  display: flex;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.shell-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-body);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--duration-quick) ease, transform var(--duration-quick) var(--ease-spring);
+}
+
+.shell-nav a:hover {
+  background: var(--surface-sunken);
+}
+
+.shell-nav a:active {
+  transform: translateY(1px);
+}
+
+.shell-nav a.active {
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.progress-chip {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-nav a {
+    transition: none;
+  }
+}
