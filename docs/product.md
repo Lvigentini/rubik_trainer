@@ -36,18 +36,22 @@ Should not include:
 
 ### Learn
 
-Purpose: progressive visual pathway with lessons, self-checks, and video references.
+Purpose: guided-discovery curriculum — figure it out first, read second, with real progress.
 
 Should include:
 
-- "Start here" panel pointing to 2x2 foundation
-- Pathway timeline showing stage progression (done/current/future)
-- Lesson workspace: diagram, steps, common mistake, self-check, practice CTA
+- `/learn` opens the learner's current lesson (first incomplete stage); every lesson is deep-linkable at `/learn/:stageId`
+- Curriculum sidebar ("sticker sheet"): groups with done/total counts, per-lesson status (done ✓ / current / locked), mastery cubies (1–3)
+- Challenge-first lesson: goal statement + embedded interactive cube preset to a scenario; goal detection is live
+- Hint ladder, never punished but mastery-relevant: concept nudge → steps + diagram + common mistake → watch-the-moves demo
+- Self-check gate (answer correctly to complete; retry allowed)
+- Completion: mastery cubies, sticker celebration, next-lesson link, practice CTA
+- Locked lessons stay visible and offer "test out" (pass the self-check, no hints, mastery 2)
 - Video reference cards attached to specific stages
-- SVG/React data-driven diagrams
 
 Should not include:
 
+- "Start here" marketing panel or pathway timeline (replaced by the sidebar)
 - Score cards or score previews
 - Game timer
 - Move pad
