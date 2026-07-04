@@ -1,69 +1,75 @@
 # Rubik Trainer product notes
 
-Version: 0.1.2
+Version: 0.2.0
 
 ## Design principles
 
-- Beautiful, calm web design over marketing splash.
-- Separate explanation from play.
-- Treat the cube as the centre of the game page.
-- Start with 2×2 because it teaches corner behaviour before 3×3 edge complexity.
-- Be honest about scan uncertainty.
+- Agent-supported skills coach: the app helps learners build cube-solving skills progressively.
+- Three-face visual scan support: enter visible faces for partial-state guidance.
+- Separate explanation from practice. Learn is for understanding; Play is for reinforcement.
+- Start with 2x2 because it teaches corner behaviour before 3x3 edge complexity.
+- Be honest about scan uncertainty and agent capabilities.
+- Practice as reinforcement, not the primary promise.
 
 ## App sections
 
 ### Home
 
-Purpose: orientation and entry.
+Purpose: sell the product — agent-supported coaching, scan support, pathway entry.
 
 Should include:
 
-- app identity
-- quiet value statement
-- primary action into Play
-- secondary action into Learn
-- visual cube presence
+- Hero: "Learn the cube with agent-supported guidance watching your progress."
+- Three-panel scan visual (Show 3 faces / Coach diagnoses / Practise the skill)
+- Skills pathway mention and CTA
+- Practice framed as reinforcement (tertiary action)
+- Feature cards: Visual Scan Coach, Skills Pathway, Practice Loops
 
 Should not include:
 
-- long guides
-- scoring tables
-- scan warnings
-- full lesson path
+- Cube size selector
+- Generic stats row
+- Score tables
+- Move pad
+- Full lesson lists
+- Interactive 3D cube (reserved for Play)
 
 ### Learn
 
-Purpose: reference and learning material.
+Purpose: progressive visual pathway with lessons, self-checks, and video references.
 
 Should include:
 
-- solving strategies
-- guide content
-- learning path/stages
-- explanation of why 2×2 comes first
-- camera/scan limitations
+- "Start here" panel pointing to 2x2 foundation
+- Pathway timeline showing stage progression (done/current/future)
+- Lesson workspace: diagram, steps, common mistake, self-check, practice CTA
+- Video reference cards attached to specific stages
+- SVG/React data-driven diagrams
 
 Should not include:
 
-- active score previews
-- game timer
-- move pad
-- scramble controls
+- Score cards or score previews
+- Game timer
+- Move pad
+- Scramble controls
+- Cube size selector grid
+- Approach selector grid
 
 ### Play
 
-Purpose: actual game/practice.
+Purpose: actual game/practice with scoring.
 
 Should include:
 
-- cube size selection
-- game mode selection
-- cube surface
-- move controls
-- timer
-- scramble/reset
-- scoring and bonuses
-- scan assistant when scan mode is active
+- Cube size selection
+- Game mode selection
+- 3D cube surface
+- Move controls
+- Timer
+- Scramble/reset
+- Scoring and bonuses
+- Scan assistant when scan mode is active
+- Skill context when launched from Learn ("Reinforcing: [skill name]")
 
 ## Game modes
 
@@ -73,26 +79,9 @@ Free move practice with scramble and inverse-solution assistance.
 
 ### Guided
 
-Should evolve into lesson-aware coaching:
-
-- current objective
-- next strategic target
-- allowed hints
-- stage completion detection
-- scoring only after a game/stage attempt
+Lesson-aware coaching with skill context from the learning pathway.
 
 ### Scan
 
-Manual/camera-assist state collection.
-
-Current state:
-
-- U/F/R entry
-- 2×2 renders 4 visible stickers per face
-- 3×3 renders 9 visible stickers per face
-
-Future state:
-
-- six-face workflow
-- multi-shot observation tracking
-- computer vision color detection
+Manual state-gathering assistant. Three visible faces provide partial guidance.
+Honest about limitations: "agent-supported guidance" / "scan coach prototype" until backend vision/LLM support exists.

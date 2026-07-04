@@ -1,44 +1,52 @@
 # Rubik Trainer
 
-Version: 0.1.2
+Version: 0.2.0
 
-Web prototype for a structured Rubik's Cube learning and practice app.
+An agent-supported cube-solving skills coach. Start with 2×2 fundamentals, follow a progressive pathway, and use scan support when stuck.
 
 ## App sections
 
-- Home: calm front page and entry points.
-- Learn: solving guides, approaches, curriculum, and reference material.
-- Play: actual game/practice area with cube size, game modes, timer, scoring, scramble, and scan assistant.
+- Home: agent-supported learning value prop, skills pathway entry, scan-coach preview.
+- Learn: progressive visual pathway with diagrams, mini self-checks, and video references.
+- Play: interactive cube, timer, scramble, scoring, and scan assistant.
 
-## Current prototype focus
-
-The app starts with 2×2 because the learner can focus on corner behaviour before adding 3×3 edge complexity.
-
-Current capabilities:
-
-- 2×2 and 3×3 selectable play surfaces.
-- 3D cube UI.
-- Scramble trainer with generated scrambles and inverse known-scramble guidance.
-- Learning guides for 2×2, 3×3 beginner method, recognition drills, and camera-assisted solving.
-- Three-face scan/manual entry for U/F/R faces.
-- Game scoring and bonuses in the Play page.
-
-Important constraint: three visible faces are not enough to uniquely reconstruct an arbitrary physical cube state. The app makes that explicit and should use three-face data for partial guidance, validation, or next-capture prompts unless the state is known from history.
-
-## Dev docs
-
-- `docs/architecture.md` — app structure, module ownership, cube-size/scoring design notes.
-- `docs/development.md` — version policy, development log, current priorities, commit acceptance criteria.
-- `docs/product.md` — product/design principles and app-section responsibilities.
-
-## Commands
+## Development
 
 ```bash
-npm install
-npm run dev
-npm run test
-npm run lint
-npm run build
+npm run dev      # local dev server on http://127.0.0.1:5174
+npm run test     # vitest run
+npm run lint     # eslint
+npm run build    # production build to dist/
 ```
 
-Local dev server defaults to `http://127.0.0.1:5174`.
+## Deployment
+
+This app is configured for Vercel static deployment as a Vite app.
+
+- Framework: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+- Install command: `npm install`
+- SPA fallback: `vercel.json` rewrites all paths to `index.html`
+
+Local production preview:
+
+```bash
+npm run build
+npx vite preview --host 127.0.0.1 --port 4173
+```
+
+## Planning docs
+
+- `docs/plans/learn-home-agent-supported-overhaul.md` — current redesign plan
+- `docs/architecture.md` — module architecture
+- `docs/product.md` — product principles
+- `docs/development.md` — dev tracking and version policy
+
+## Stack
+
+Vite + React + TypeScript + ESLint + Vitest.
+
+## Video references
+
+The app references curated YouTube tutorials for supplemental learning. See `src/videos.ts` for the full list.

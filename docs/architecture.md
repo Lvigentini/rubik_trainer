@@ -1,89 +1,57 @@
 # Rubik Trainer architecture
 
-Version: 0.1.2
+Version: 0.2.0
 
 ## Product shape
 
-The app is split into three primary sections:
+The app is an agent-supported skills coach with three sections:
 
-1. Home
-   - First impression only.
-   - No curriculum dump.
-   - Entry points into Learn and Play.
+1. Home — Sell the product: agent-supported coaching, scan support, pathway entry.
+2. Learn — Progressive skill pathway with visual lessons, self-checks, video references.
+3. Play — Interactive cube, timer, scramble, scoring, scan assistant.
 
-2. Learn
-   - Explanation and guide content.
-   - Cube-solving strategies and approaches.
-   - Lesson path descriptions.
-   - No game scoring. Scoring belongs to active play only.
+## Frontend modules
 
-3. Play
-   - Actual interactive cube/game workspace.
-   - Cube size selector.
-   - Game mode selector.
-   - Timer, scramble, moves, scan/practice tools.
-   - Scoring and bonuses shown in the context of gameplay.
+### App shell
+- `src/App.tsx` — App shell + routing + shared state only.
 
-## Current frontend modules
+### Pages
+- `src/components/HomePage.tsx` — Hero, three-panel scan visual, feature cards.
+- `src/components/LearnPage.tsx` — Start-here panel, pathway, lesson workspace.
+- `src/components/PracticePage.tsx` — Play page with cube, timer, scoring.
 
-- `src/App.tsx`
-  - App shell, section navigation, current prototype UI.
-  - Owns transient UI state: active page, selected cube size, selected approach, selected game mode, timer, scan state, current cube.
+### Learn components
+- `src/components/PathwayTimeline.tsx` — Visual roadmap of stages.
+- `src/components/LessonWorkspace.tsx` — Single lesson: diagram, steps, mistake, self-check, CTA.
+- `src/components/SelfCheckCard.tsx` — Multiple-choice / visual-choice UI.
+- `src/components/VideoReferenceCard.tsx` — External video link card.
+- `src/components/CubeDiagram.tsx` — Flat-face SVG grids.
 
-- `src/cube.ts`
-  - Cube sticker model and move engine.
-  - Current engine is a 3×3 sticker-state model.
-  - The 2×2 mode currently renders and scans only corner stickers while reusing the same move engine.
+### Home components
+- `src/components/ScanCoachPreview.tsx` — Three-panel scan illustration.
 
-- `src/trainer.ts`
-  - Testable trainer domain data.
-  - Cube sizes, approaches, lessons, scoring calculation.
+### Data modules
+- `src/learningPath.ts` — Progressive learning stages (replaces guides.ts).
+- `src/selfChecks.ts` — Self-check definitions and validation.
+- `src/videos.ts` — Curated external video references.
+- `src/lessonDiagrams.ts` — Encoded cube states for flat-face diagrams.
+- `src/trainer.ts` — Scoring calculation (Play page only).
+- `src/cube.ts` — Cube sticker model and move engine.
 
-- `src/guides.ts`
-  - User-facing learning/reference content.
-  - This is separate from scoring and game state.
-
-- `src/*.test.ts(x)`
-  - Domain tests for cube/trainer logic.
-  - UI tests for section separation and 2×2 rendering contract.
-
-## 2×2 implementation status
-
-Current 2×2 mode is a prototype-level representation:
-
-- visible cube faces render four corner stickers per face
-- scan mode renders four stickers per visible face
-- scramble length is shorter in 2×2 mode
-- move engine still uses the 3×3 sticker model internally
-
-Needed later:
-
-- true 2×2 cubie model or a generalized NxN model
-- 2×2-specific solving algorithms
-- 2×2-specific move validation and stage detection
+### Deprecated
+- `src/guides.ts` — Content migrated to learningPath.ts.
 
 ## Scoring rule
 
-Scoring is a gameplay feedback system, not educational copy.
+Scoring belongs exclusively to Play. It depends on:
+- completion, move count, timer, hint usage, mistakes, streaks
 
-It belongs in Play because it depends on:
-
-- completion
-- move count
-- timer
-- hint usage
-- mistakes
-- streaks
-
-Learn can explain that scoring exists, but should not render live score previews or game bonus cards.
+Learn explains skills. Play measures performance.
 
 ## Known product constraint
 
-Three visible faces do not uniquely identify an arbitrary physical cube state. The app should never claim exact solving from only one U/F/R observation unless the cube state is known from prior history.
+Three visible faces do not uniquely identify an arbitrary physical cube state. The scan coach provides partial-state guidance and asks for more views when needed.
 
-Acceptable flows:
+## Deployment
 
-- known scramble/history -> exact inverse solution
-- six-face scan -> exact reconstruction path later
-- multi-shot scan -> accumulate observations
-- three-face scan -> partial guidance, validation, next capture request
+Static Vite app deployed on Vercel. No server-side APIs. See vercel.json.
