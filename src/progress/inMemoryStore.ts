@@ -79,7 +79,7 @@ export class InMemoryProgressStore implements ProgressStore {
   recordPracticeSession(session: PracticeSession): void {
     this.update((draft) => {
       draft.practice.totalSessions += 1;
-      draft.practice.totalMoves += session.moves;
+      draft.practice.totalMoves += Math.max(0, session.moves);
       if (session.solved && session.elapsedMs !== undefined) {
         const best = draft.practice.bestTimeMsBySize[session.cubeSize];
         if (best === undefined || session.elapsedMs < best) {

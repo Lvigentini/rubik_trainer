@@ -5,10 +5,8 @@ import {
   type FaceGrid,
   type Turn,
   applyAlgorithm,
-  applyTurn,
   createSolvedCube,
   generateScramble,
-  inverseTurn,
   toFaceGrid,
 } from '../../cube';
 import { CUBE_SIZES, type CubeSizeId } from '../../trainer';
@@ -64,6 +62,10 @@ export type CubeSession = {
   selectedBand: BandSelection;
   setSelectedBand: (band: BandSelection) => void;
   applyMove: (turn: Turn) => void;
+  /** Applies a batch of turns as a single history entry — used by "Finish
+   * known solve" so N moves record as N moves instead of collapsing to 1
+   * (see the historyState refactor note below). */
+  applyMoves: (turns: Turn[]) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -87,11 +89,19 @@ export function CubeWorkspace({
   children: (session: CubeSession) => ReactNode;
 }) {
   const [selectedCubeSize, setSelectedCubeSizeState] = useState<CubeSizeId>(initialCubeSize);
-  const [cube, setCube] = useState<CubeState>(() =>
-    initialScramble?.length ? applyAlgorithm(createSolvedCube(), initialScramble) : createSolvedCube(),
-  );
-  const [moveHistory, setMoveHistory] = useState<Turn[]>(() => initialScramble ?? []);
-  const [historyCursor, setHistoryCursor] = useState(() => initialScramble?.length ?? 0);
+  // History and cursor live in ONE state object, always updated together via
+  // a single functional setState call. This is what makes applyMove (and the
+  // batch-safe applyMoves) safe to call multiple times synchronously in one
+  // handler (e.g. "Finish known solve" looping over a solution): each call
+  // reads the *previous updater's* result, not a stale render-time closure,
+  // so N calls record N moves instead of collapsing to 1. The cube itself is
+  // derived (see `cube` below) rather than kept as separate state, so it can
+  // never drift out of sync with history/cursor.
+  const [historyState, setHistoryState] = useState<{ history: Turn[]; cursor: number }>(() => ({
+    history: initialScramble ?? [],
+    cursor: initialScramble?.length ?? 0,
+  }));
+  const { history: moveHistory, cursor: historyCursor } = historyState;
   const [lastScramble, setLastScramble] = useState<Turn[]>(() => initialScramble ?? []);
   const [scrambleAt, setScrambleAt] = useState<number | null>(() => (initialScramble?.length ? Date.now() : null));
   const [tilt, setTilt] = useState({ x: -28, y: -38 });
@@ -101,6 +111,10 @@ export function CubeWorkspace({
   const [liveElapsedMs, setLiveElapsedMs] = useState(0);
   const moveHistoryRef = useRef<HTMLDivElement>(null);
 
+  const cube = useMemo(
+    () => applyAlgorithm(createSolvedCube(), moveHistory.slice(0, historyCursor)),
+    [moveHistory, historyCursor],
+  );
   const grid = useMemo(() => toFaceGrid(cube), [cube]);
   const isTiming = timerStart !== null;
   const movesSinceScramble = historyCursor - lastScramble.length;
@@ -117,28 +131,25 @@ export function CubeWorkspace({
     }
   }, [moveHistory]);
 
-  const applyMove = useCallback(
-    (turn: Turn) => {
-      setCube((current) => applyTurn(current, turn));
-      setMoveHistory((history) => [...history.slice(0, historyCursor), turn]);
-      setHistoryCursor(historyCursor + 1);
-    },
-    [historyCursor],
-  );
+  const applyMove = useCallback((turn: Turn) => {
+    setHistoryState((s) => ({ history: [...s.history.slice(0, s.cursor), turn], cursor: s.cursor + 1 }));
+  }, []);
+
+  const applyMoves = useCallback((turns: Turn[]) => {
+    if (!turns.length) return;
+    setHistoryState((s) => ({
+      history: [...s.history.slice(0, s.cursor), ...turns],
+      cursor: s.cursor + turns.length,
+    }));
+  }, []);
 
   const undo = useCallback(() => {
-    if (historyCursor <= 0) return;
-    const turn = moveHistory[historyCursor - 1];
-    setCube((current) => applyTurn(current, inverseTurn(turn)));
-    setHistoryCursor((cursor) => cursor - 1);
-  }, [historyCursor, moveHistory]);
+    setHistoryState((s) => (s.cursor <= 0 ? s : { ...s, cursor: s.cursor - 1 }));
+  }, []);
 
   const redo = useCallback(() => {
-    if (historyCursor >= moveHistory.length) return;
-    const turn = moveHistory[historyCursor];
-    setCube((current) => applyTurn(current, turn));
-    setHistoryCursor((cursor) => cursor + 1);
-  }, [historyCursor, moveHistory]);
+    setHistoryState((s) => (s.cursor >= s.history.length ? s : { ...s, cursor: s.cursor + 1 }));
+  }, []);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -172,9 +183,7 @@ export function CubeWorkspace({
   const scrambleCube = useCallback(() => {
     const scramble = generateScramble(selectedCubeSize === '2x2' ? 10 : 20);
     setLastScramble(scramble);
-    setMoveHistory(scramble);
-    setHistoryCursor(scramble.length);
-    setCube(applyAlgorithm(createSolvedCube(), scramble));
+    setHistoryState({ history: scramble, cursor: scramble.length });
     setScrambleAt(Date.now());
     setElapsedMs(null);
     setTimerStart(null);
@@ -182,9 +191,7 @@ export function CubeWorkspace({
   }, [selectedCubeSize]);
 
   const resetCube = useCallback(() => {
-    setCube(createSolvedCube());
-    setMoveHistory([]);
-    setHistoryCursor(0);
+    setHistoryState({ history: [], cursor: 0 });
     setLastScramble([]);
     setScrambleAt(null);
     setElapsedMs(null);
@@ -225,6 +232,7 @@ export function CubeWorkspace({
     selectedBand,
     setSelectedBand,
     applyMove,
+    applyMoves,
     undo,
     redo,
     canUndo: historyCursor > 0,

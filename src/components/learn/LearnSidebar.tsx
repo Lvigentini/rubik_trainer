@@ -48,8 +48,12 @@ export function LearnSidebar({ currentStageId, onNavigate }: Props) {
                       to={`/learn/${stage.id}`}
                       className={`sidebar-stage ${status} ${stage.id === currentStageId ? 'current' : ''}`}
                       onClick={() => onNavigate?.()}
-                      aria-disabled={locked}
                       title={locked ? `Complete ${prerequisite?.title ?? 'earlier lessons'} to unlock` : undefined}
+                      aria-description={
+                        locked
+                          ? `Locked — complete ${prerequisite?.title ?? 'earlier lessons'} to unlock; opens test-out`
+                          : undefined
+                      }
                     >
                       <span className="stage-chip" aria-hidden="true">
                         {completed ? <Check size={13} /> : locked ? <Lock size={12} /> : stage.level}

@@ -36,20 +36,28 @@ describe('LearnSidebar', () => {
     expect(sidebar.getByRole('link', { name: /white cross/i }).className).toContain('locked');
   });
 
-  it('locked stages are marked aria-disabled with a "Complete X to unlock" title', () => {
+  it('locked stages carry a "Complete X to unlock" title and aria-description, but stay navigable', () => {
     renderSidebar();
     const sidebar = within(screen.getByTestId('learn-sidebar'));
     const locked = sidebar.getByRole('link', { name: /build one complete face/i });
-    expect(locked).toHaveAttribute('aria-disabled', 'true');
+    expect(locked).not.toHaveAttribute('aria-disabled');
     expect(locked).toHaveAttribute('title', expect.stringMatching(/complete orientation and notation to unlock/i));
+    expect(locked).toHaveAttribute(
+      'aria-description',
+      expect.stringMatching(/locked.*complete orientation and notation to unlock.*test-out/i),
+    );
+    expect(locked).toHaveAttribute('href', '/learn/2x2-first-face');
   });
 
-  it('unlocked/done stages are not marked aria-disabled', () => {
+  it('unlocked/done stages carry no locked title or aria-description', () => {
     const store = new InMemoryProgressStore();
     store.completeLesson('2x2-orientation', 3, 0);
     renderSidebar(store);
     const sidebar = within(screen.getByTestId('learn-sidebar'));
-    expect(sidebar.getByRole('link', { name: /orientation and notation/i })).toHaveAttribute('aria-disabled', 'false');
+    const done = sidebar.getByRole('link', { name: /orientation and notation/i });
+    expect(done).not.toHaveAttribute('aria-disabled');
+    expect(done).not.toHaveAttribute('title');
+    expect(done).not.toHaveAttribute('aria-description');
   });
 
   it('uses a proper (non-skipped) heading level for group headers', () => {

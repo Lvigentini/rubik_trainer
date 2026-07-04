@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rubik Trainer</title>
+    <script>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem('rubik-trainer-theme');
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.dataset.theme = stored;
+          }
+        } catch (e) {
+          // Storage unavailable (private mode, disabled cookies, etc.) —
+          // falls through to the prefers-color-scheme default in tokens.css.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

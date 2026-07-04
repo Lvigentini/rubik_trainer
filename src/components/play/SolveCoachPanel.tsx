@@ -59,7 +59,11 @@ function SolveCoachBody({
   const remainingSolution = solution.slice(solutionCursor);
   const goalId = session.cubeSize === '2x2' ? 'cube-solved-2x2' : 'cube-solved';
   const hasScrambled = session.lastScramble.length > 0;
-  const solved = hasScrambled && isGoalMet(goalId, session.cube);
+  // Requires at least one forward move past the scramble, so undoing the
+  // scramble back to solved (cursor <= lastScramble.length) never counts as
+  // a solve — that would credit zero actual solving skill.
+  const movedPastScramble = session.historyCursor > session.lastScramble.length;
+  const solved = hasScrambled && movedPastScramble && isGoalMet(goalId, session.cube);
 
   // Recording (and computing the score from real, honest values) happens
   // exactly once per scramble inside this ref-guarded effect — the same
@@ -108,7 +112,9 @@ function SolveCoachBody({
 
   function applyRemainingSolution() {
     if (!remainingSolution.length) return;
-    remainingSolution.forEach((turn) => session.applyMove(turn));
+    // Batched via applyMoves (one history update covering all N turns) rather
+    // than looping session.applyMove N times in this handler.
+    session.applyMoves(remainingSolution);
     setHintsUsed((count) => count + remainingSolution.length);
     setSolutionCursor(solution.length);
   }

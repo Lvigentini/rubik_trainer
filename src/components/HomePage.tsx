@@ -35,15 +35,20 @@ export function HomePage() {
 
   const groupProgress = getGroupProgress(stage.group, snapshot);
   const { current, best } = snapshot.streak;
+  const allDone = done === total;
 
   return (
     <section className="home-view home-view-resume">
       <article className="home-resume-card" data-testid="home-resume-card">
-        <p className="home-eyebrow">Continue</p>
+        <p className="home-eyebrow">{allDone ? 'All done' : 'Continue'}</p>
         <h1 className="home-resume-title">
-          Continue: Lesson {stage.level} &mdash; {stage.title}
+          {allDone ? (
+            `All ${total} skills complete — free play or beat your best times`
+          ) : (
+            <>Continue: Lesson {stage.level} &mdash; {stage.title}</>
+          )}
         </h1>
-        <p className="home-resume-outcome">{stage.outcome}</p>
+        {!allDone && <p className="home-resume-outcome">{stage.outcome}</p>}
         <div className="home-progress-row">
           <div className="home-progress-stat">
             <span>Skills</span>
@@ -59,9 +64,15 @@ export function HomePage() {
             <span className="home-streak-best">Best {best}</span>
           </div>
         </div>
-        <button className="home-cta-primary" onClick={() => navigate(`/learn/${stage.id}`)}>
-          Continue lesson <ArrowRight size={16} />
-        </button>
+        {allDone ? (
+          <button className="home-cta-primary" onClick={() => navigate('/play/free')}>
+            Free play <ArrowRight size={16} />
+          </button>
+        ) : (
+          <button className="home-cta-primary" onClick={() => navigate(`/learn/${stage.id}`)}>
+            Continue lesson <ArrowRight size={16} />
+          </button>
+        )}
       </article>
 
       <div className="home-mode-tiles">

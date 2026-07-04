@@ -9,6 +9,17 @@ html {
   color-scheme: light dark;
 }
 
+/* An explicit theme choice pins the browser's own UI (scrollbars, form
+   controls, etc.) to match, instead of leaving it to follow the OS
+   preference regardless of what the app itself is showing. */
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-width: 320px;

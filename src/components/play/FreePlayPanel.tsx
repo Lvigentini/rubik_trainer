@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isGoalMet } from '../../challenges';
 import { formatAlgorithm } from '../../cube';
 import type { LearningStage } from '../../learningPath';
@@ -28,6 +28,8 @@ export function FreePlayPanel({
   );
 }
 
+type CompletedRun = { elapsedMs: number; isNewBest: boolean };
+
 function FreePlayBody({
   session,
   store,
@@ -39,25 +41,54 @@ function FreePlayBody({
 }) {
   const hasScrambled = session.lastScramble.length > 0;
   const goalId = session.cubeSize === '2x2' ? 'cube-solved-2x2' : 'cube-solved';
-  const solved = hasScrambled && isGoalMet(goalId, session.cube);
-  const recordedElapsedRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (session.elapsedMs == null || recordedElapsedRef.current === session.elapsedMs) return;
-    recordedElapsedRef.current = session.elapsedMs;
-    if (hasScrambled && solved) {
-      store.recordPracticeSession({
-        cubeSize: session.cubeSize,
-        mode: 'free',
-        moves: session.movesSinceScramble,
-        elapsedMs: session.elapsedMs,
-        solved: true,
-      });
-    }
-  }, [session.elapsedMs, hasScrambled, solved, session.cubeSize, session.movesSinceScramble, store]);
-
+  // Requires at least one forward move past the scramble, so undoing the
+  // scramble back to solved (cursor <= lastScramble.length) never counts as
+  // a solve — that would credit zero actual solving skill.
+  const movedPastScramble = session.historyCursor > session.lastScramble.length;
+  const solved = hasScrambled && movedPastScramble && isGoalMet(goalId, session.cube);
   const bestMs = snapshot.practice.bestTimeMsBySize[session.cubeSize];
-  const showSolvedCard = session.elapsedMs != null && solved;
+
+  // completedRun is the ONLY source for the "Solved!" card: it's set inside
+  // the recording effect below, exclusively when a session was actually
+  // recorded, and reset (via the "adjust state during render" pattern,
+  // mirroring SolveCoachPanel's scramble-token reset) whenever a new
+  // scramble/reset starts a new run. This is what stops a stale elapsedMs
+  // from a stopped-but-unsolved timer plus a later, untimed manual solve
+  // from ever showing a false "Solved!" card, and stops a second stop/start
+  // of the timer on the same scramble from recording a second session.
+  const [scrambleToken, setScrambleToken] = useState(session.lastScramble);
+  const [completedRun, setCompletedRun] = useState<CompletedRun | null>(null);
+  if (scrambleToken !== session.lastScramble) {
+    setScrambleToken(session.lastScramble);
+    setCompletedRun(null);
+  }
+
+  // Single merged early-return guard (the same ref-guard idiom LessonView
+  // and SolveCoachPanel use) — everything after it runs unconditionally, so
+  // there's no separate non-ref-derived conditional wrapping the setState
+  // calls. `alreadyConsidered` is read from the ref, then the ref is
+  // unconditionally updated to the current elapsedMs — regardless of
+  // whether this particular elapsedMs turns out to be a solve — so a later
+  // render where `solved` flips true for that SAME (stale) elapsedMs value
+  // (no new timer stop) is recognized as already-considered and skipped.
+  const recordedElapsedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (session.elapsedMs == null || completedRun != null) return;
+    const alreadyConsidered = recordedElapsedRef.current === session.elapsedMs;
+    recordedElapsedRef.current = session.elapsedMs;
+    if (alreadyConsidered || !hasScrambled || !solved) return;
+    store.recordPracticeSession({
+      cubeSize: session.cubeSize,
+      mode: 'free',
+      moves: session.movesSinceScramble,
+      elapsedMs: session.elapsedMs,
+      solved: true,
+    });
+    setCompletedRun({
+      elapsedMs: session.elapsedMs,
+      isNewBest: bestMs === undefined || session.elapsedMs < bestMs,
+    });
+  }, [session.elapsedMs, hasScrambled, solved, session.cubeSize, session.movesSinceScramble, store, completedRun, bestMs]);
 
   return (
     <aside className="panel practice-panel">
@@ -70,15 +101,15 @@ function FreePlayBody({
         <span>Scramble</span>
         <code>{session.lastScramble.length ? formatAlgorithm(session.lastScramble) : 'Generate a scramble to begin.'}</code>
       </div>
-      {showSolvedCard && (
+      {completedRun && (
         <div className="confidence-card" data-testid="free-play-solved-card">
           <span>Solved!</span>
-          <strong>{formatTime(session.elapsedMs as number)}</strong>
-          {bestMs !== undefined && (
-            <p className="note">
-              {bestMs === session.elapsedMs ? 'New best time.' : `Best: ${formatTime(bestMs)}`}
-            </p>
-          )}
+          <strong>{formatTime(completedRun.elapsedMs)}</strong>
+          {completedRun.isNewBest ? (
+            <p className="note">New best time.</p>
+          ) : bestMs !== undefined ? (
+            <p className="note">Best: {formatTime(bestMs)}</p>
+          ) : null}
         </div>
       )}
     </aside>

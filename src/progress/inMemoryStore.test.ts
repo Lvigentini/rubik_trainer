@@ -115,6 +115,12 @@ describe('InMemoryProgressStore — self-checks and practice', () => {
     expect(practice.totalMoves).toBe(90);
     expect(practice.bestTimeMsBySize['2x2']).toBe(60_000);
   });
+
+  it('clamps negative moves to 0 instead of letting totals go negative', () => {
+    const { store } = makeStore();
+    store.recordPracticeSession({ cubeSize: '2x2', mode: 'free', moves: -5, solved: false });
+    expect(store.getSnapshot().practice.totalMoves).toBe(0);
+  });
 });
 
 describe('InMemoryProgressStore — subscribe', () => {

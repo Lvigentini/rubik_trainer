@@ -27,6 +27,12 @@
   --text-body: #4c463c;
   --text-muted: #6c665a;
   --text-on-accent: #ffffff;
+  /* Non-flipping ink for text drawn over the bright, saturated sticker
+     colors (palette buttons, sticker labels) — those inline backgrounds
+     don't change with the theme, so their foreground shouldn't either.
+     Intentionally NOT overridden in the [data-theme='dark'] block or the
+     prefers-color-scheme block below. */
+  --ink-on-sticker: #27221a;
 
   /* Shape & depth — chunky, board-game tactile */
   --radius-lg: 16px;
