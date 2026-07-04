@@ -1,5 +1,7 @@
 # UX Overhaul Phase 1 — Foundations Implementation Plan
 
+> **Status: EXECUTED 2026-07-04** on branch `ux-overhaul` (tasks 1–7 complete, per-task reviews clean; two plan amendments during execution: shell container class renamed `.app-shell`→`.shell-root`, light `--text-muted` darkened to `#6c665a` for AA contrast — both reflected in the code blocks below).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Lay the foundations for the UX overhaul: pinned dependencies, URL routing with a new app shell, the design-token system, and a real (in-memory) progress store with unlock logic — with the existing pages still fully working.
@@ -698,7 +700,7 @@ No unit tests (CSS only) — verification is lint/build plus the shell task's co
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: CSS custom properties (`--sticker-*`, `--color-*`, `--surface-*`, `--border-*`, `--text-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--ease-spring`, `--duration-*`) and shell classes `.app-shell`, `.shell-topbar`, `.shell-brand`, `.shell-nav`, `.progress-chip` used by Task 6.
+- Produces: CSS custom properties (`--sticker-*`, `--color-*`, `--surface-*`, `--border-*`, `--text-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--ease-spring`, `--duration-*`) and shell classes `.shell-root`, `.shell-topbar`, `.shell-brand`, `.shell-nav`, `.progress-chip` used by Task 6.
 
 - [ ] **Step 1: Write the tokens file**
 
@@ -730,7 +732,7 @@ No unit tests (CSS only) — verification is lint/build plus the shell task's co
   --border-soft: #e8e5de;
   --text-strong: #27221a;
   --text-body: #4c463c;
-  --text-muted: #8b8478;
+  --text-muted: #6c665a; /* darkened from #8b8478 after AA-contrast review finding */
   --text-on-accent: #ffffff;
 
   /* Shape & depth — chunky, board-game tactile */
@@ -768,7 +770,9 @@ No unit tests (CSS only) — verification is lint/build plus the shell task's co
 
 ```css
 /* src/styles/base.css — app shell: topbar, nav, progress chip. */
-.app-shell {
+/* NOTE (task-5 review): container class is .shell-root, not .app-shell —
+   legacy styles.css owns .app-shell until Phase 4 removes it. */
+.shell-root {
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
   padding: 16px 0 48px;
@@ -958,7 +962,7 @@ export function AppLayout() {
   const { done, total } = getCompletedCount(snapshot);
 
   return (
-    <div className="app-shell">
+    <div className="shell-root">
       <header className="shell-topbar">
         <NavLink to="/" className="shell-brand">Rubik Trainer</NavLink>
         <nav className="shell-nav" aria-label="Primary navigation">
