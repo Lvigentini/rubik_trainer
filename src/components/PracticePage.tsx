@@ -30,12 +30,11 @@ import {
 } from '../cube';
 import { CUBE_SIZES, type CubeSizeId, calculateLessonScore } from '../trainer';
 import { getStageById } from '../learningPath';
+import { BAND_SELECTIONS, type BandSelection, STICKER_INDICES_BY_SIZE } from './cube/bands';
+import { BandControls } from './cube/BandControls';
+import { CubeView } from './cube/CubeView';
 
 const SCAN_FACES: ScanFace[] = ['U', 'F', 'R'];
-const STICKER_INDICES_BY_SIZE: Record<CubeSizeId, number[]> = {
-  '2x2': [0, 2, 6, 8],
-  '3x3': [0, 1, 2, 3, 4, 5, 6, 7, 8],
-};
 
 const KEYBOARD_MAP: Record<string, Turn> = {
   u: 'U',
@@ -60,209 +59,11 @@ const KEYBOARD_MAP: Record<string, Turn> = {
 
 const PRIME_KEYS = new Set(['U', 'R', 'F', 'D', 'L', 'B', 'M', 'E', 'S']);
 
-type BandTurn = 'U' | 'E' | 'D' | 'L' | 'M' | 'R' | 'F' | 'S' | 'B';
-type BandSelection = {
-  id: string;
-  label: string;
-  description: string;
-  turn: BandTurn;
-  requires3x3?: boolean;
-};
-
-const BAND_SELECTIONS: BandSelection[] = [
-  { id: 'top-row', label: 'Top row', description: 'Grab the upper horizontal layer', turn: 'U' },
-  { id: 'middle-row', label: 'Middle row', description: 'Grab the equator row through the cube', turn: 'E', requires3x3: true },
-  { id: 'bottom-row', label: 'Bottom row', description: 'Grab the lower horizontal layer', turn: 'D' },
-  { id: 'left-column', label: 'Left column', description: 'Grab the left vertical layer', turn: 'L' },
-  { id: 'middle-column', label: 'Middle column', description: 'Grab the centre vertical slice', turn: 'M', requires3x3: true },
-  { id: 'right-column', label: 'Right column', description: 'Grab the right vertical layer', turn: 'R' },
-  { id: 'front-layer', label: 'Front layer', description: 'Twist the face nearest you', turn: 'F' },
-  { id: 'standing-slice', label: 'Standing slice', description: 'Twist the slice behind the front face', turn: 'S', requires3x3: true },
-  { id: 'back-layer', label: 'Back layer', description: 'Twist the far back face', turn: 'B' },
-];
-
 function formatTime(ms: number): string {
   const seconds = ms / 1000;
   if (seconds < 60) return `${seconds.toFixed(2)}s`;
   const mins = Math.floor(seconds / 60);
   return `${mins}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
-}
-
-function getTurnForBand(band: BandSelection, suffix: '' | "'" | '2'): Turn {
-  return `${band.turn}${suffix || ''}` as Turn;
-}
-
-function bandStickerIndices(bandId: string, cubeSize: CubeSizeId): Set<number> {
-  const is3x3 = cubeSize === '3x3';
-  if (bandId === 'top-row') return new Set(is3x3 ? [0, 1, 2] : [0, 2]);
-  if (bandId === 'middle-row') return new Set([3, 4, 5]);
-  if (bandId === 'bottom-row') return new Set(is3x3 ? [6, 7, 8] : [6, 8]);
-  if (bandId === 'left-column') return new Set(is3x3 ? [0, 3, 6] : [0, 6]);
-  if (bandId === 'middle-column') return new Set([1, 4, 7]);
-  if (bandId === 'right-column') return new Set(is3x3 ? [2, 5, 8] : [2, 8]);
-  if (bandId === 'front-layer') return new Set(is3x3 ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [0, 2, 6, 8]);
-  return new Set();
-}
-
-function Cube3D({
-  grid,
-  tilt,
-  cubeSize,
-  selectedBand,
-  onSelectBand,
-  onTurn,
-}: {
-  grid: Record<FaceName, FaceName[]>;
-  tilt: { x: number; y: number };
-  cubeSize: CubeSizeId;
-  selectedBand?: BandSelection;
-  onSelectBand?: (band: BandSelection) => void;
-  onTurn?: (turn: Turn) => void;
-}) {
-  const stickerIndices = STICKER_INDICES_BY_SIZE[cubeSize];
-  const gridClass = cubeSize === '2x2' ? 'cube-size-2x2' : 'cube-size-3x3';
-  const highlighted = selectedBand ? bandStickerIndices(selectedBand.id, cubeSize) : new Set<number>();
-  const is3x3 = cubeSize === '3x3';
-
-  const handleStickerClick = (band: BandSelection, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelectBand?.(band);
-  };
-
-  const handleRotateClick = (turn: Turn, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onTurn?.(turn);
-  };
-
-  return (
-    <div
-      className="cube-stage"
-      aria-label={`Interactive ${cubeSize.replace('x', '×')} cube preview`}
-      data-cube-size={cubeSize}
-    >
-      <div className="cube" style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
-        {FACE_NAMES.map((face) => (
-          <div
-            key={face}
-            className={`cube-face cube-face-${face.toLowerCase()} ${gridClass} ${face === 'F' && selectedBand?.id === 'front-layer' ? 'selected-face' : ''}`}
-            aria-label={`${face} face preview`}
-          >
-            {stickerIndices.map((stickerIndex) => {
-              const color = grid[face][stickerIndex];
-              const isHighlighted = face === 'F' && highlighted.has(stickerIndex);
-              return (
-                <span
-                  key={`${face}-${stickerIndex}`}
-                  className={`sticker ${isHighlighted ? 'highlighted' : ''}`}
-                  data-testid="cube-sticker"
-                  style={{ background: COLORS[color] }}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      {onSelectBand && (
-        <div className="cube-layer-grabbers" aria-label="Select layer by clicking rows or columns on the front face">
-          {(['top-row', 'middle-row', 'bottom-row'] as const)
-            .filter((id) => is3x3 || id !== 'middle-row')
-            .map((id) => {
-              const band = BAND_SELECTIONS.find((b) => b.id === id)!;
-              return (
-                <button
-                  key={id}
-                  className={`layer-grabber row-grabber ${id} ${selectedBand?.id === id ? 'selected' : ''}`}
-                  aria-label={band.label}
-                  title={band.description}
-                  onClick={(e) => handleStickerClick(band, e)}
-                />
-              );
-            })}
-          {(['left-column', 'middle-column', 'right-column'] as const)
-            .filter((id) => is3x3 || id !== 'middle-column')
-            .map((id) => {
-              const band = BAND_SELECTIONS.find((b) => b.id === id)!;
-              return (
-                <button
-                  key={id}
-                  className={`layer-grabber col-grabber ${id} ${selectedBand?.id === id ? 'selected' : ''}`}
-                  aria-label={band.label}
-                  title={band.description}
-                  onClick={(e) => handleStickerClick(band, e)}
-                />
-              );
-            })}
-        </div>
-      )}
-      {onTurn && selectedBand && (
-        <div className="cube-rotate-arrows" aria-label="Rotate selected layer">
-          <button
-            className="cube-arrow cube-arrow-cw"
-            aria-label="Turn selected layer clockwise"
-            onClick={(e) => handleRotateClick(getTurnForBand(selectedBand, ''), e)}
-          >
-            ↻
-          </button>
-          <button
-            className="cube-arrow cube-arrow-ccw"
-            aria-label="Turn selected layer counter-clockwise"
-            onClick={(e) => handleRotateClick(getTurnForBand(selectedBand, "'"), e)}
-          >
-            ↺
-          </button>
-          <button
-            className="cube-arrow cube-arrow-2"
-            aria-label="Turn selected layer 180 degrees"
-            onClick={(e) => handleRotateClick(getTurnForBand(selectedBand, '2'), e)}
-          >
-            2
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-function BandReferenceBar({
-  cubeSize,
-  selectedBand,
-  onSelectBand,
-  onTurn,
-}: {
-  cubeSize: CubeSizeId;
-  selectedBand: BandSelection;
-  onSelectBand: (band: BandSelection) => void;
-  onTurn: (turn: Turn) => void;
-}) {
-  const is3x3 = cubeSize === '3x3';
-  const visible = BAND_SELECTIONS.filter((band) => is3x3 || !band.requires3x3);
-  return (
-    <div className="band-reference-bar" data-testid="band-reference-bar">
-      <div className="band-reference-labels">
-        {visible.map((band) => (
-          <button
-            key={band.id}
-            className={selectedBand.id === band.id ? 'selected' : ''}
-            onClick={() => onSelectBand(band)}
-            aria-label={band.label}
-            title={`${band.label} (${band.turn})`}
-          >
-            <span>{band.turn}</span>
-          </button>
-        ))}
-      </div>
-      <div className="band-reference-arrows">
-        <button aria-label="Turn selected layer clockwise" onClick={() => onTurn(getTurnForBand(selectedBand, ''))}>
-          ↻
-        </button>
-        <button aria-label="Turn selected layer counter-clockwise" onClick={() => onTurn(getTurnForBand(selectedBand, "'"))}>
-          ↺
-        </button>
-        <button aria-label="Turn selected layer 180 degrees" onClick={() => onTurn(getTurnForBand(selectedBand, '2'))}>
-          2
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function FaceEditor({
@@ -534,7 +335,7 @@ export function PracticePage({ skillContext, initialMode = 'practice' }: { skill
               <button onClick={() => setTilt((v) => ({ ...v, y: v.y + 18 }))}>↷</button>
             </div>
           </div>
-          <Cube3D
+          <CubeView
             grid={grid}
             tilt={tilt}
             cubeSize={selectedCubeSize}
@@ -543,7 +344,7 @@ export function PracticePage({ skillContext, initialMode = 'practice' }: { skill
             onTurn={applyMove}
           />
 
-          <BandReferenceBar
+          <BandControls
             cubeSize={selectedCubeSize}
             selectedBand={selectedBand}
             onSelectBand={setSelectedBand}
