@@ -1,48 +1,72 @@
-import { BookOpen, Gamepad2, Home } from 'lucide-react';
-import { useState } from 'react';
+import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import './styles.css';
+import { AppLayout } from './app/AppLayout';
 import { HomePage } from './components/HomePage';
 import { LearnPage } from './components/LearnPage';
 import { PracticePage } from './components/PracticePage';
+import { getStageById, type LearningStageId } from './learningPath';
+import { useProgress } from './progress/ProgressContext';
+import { getCurrentStageId } from './progress/unlocks';
 
-type Page = 'home' | 'learn' | 'play';
-type GameMode = 'practice' | 'guided' | 'scan';
+const PLAY_MODE_MAP = { free: 'practice', coach: 'guided', scan: 'scan' } as const;
+type PlayModeParam = keyof typeof PLAY_MODE_MAP;
+
+function HomeRoute() {
+  const navigate = useNavigate();
+  return (
+    <HomePage
+      onStartPathway={() => navigate('/learn')}
+      onScanCoach={() => navigate('/play/scan')}
+      onFreePractice={() => navigate('/play/free')}
+    />
+  );
+}
+
+function LearnIndexRedirect() {
+  const snapshot = useProgress();
+  return <Navigate to={`/learn/${getCurrentStageId(snapshot)}`} replace />;
+}
+
+function LearnRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = stageId ? getStageById(stageId as LearningStageId) : undefined;
+  if (!stage) return <LearnIndexRedirect />;
+  return (
+    <LearnPage
+      stageId={stage.id}
+      onSelectStage={(id) => navigate(`/learn/${id}`)}
+      onPractice={(id) => navigate(`/play/coach?skill=${id}`)}
+    />
+  );
+}
+
+function PlayRoute() {
+  const { mode } = useParams();
+  const [searchParams] = useSearchParams();
+  if (!mode || !(mode in PLAY_MODE_MAP)) return <Navigate to="/play/free" replace />;
+  const skill = searchParams.get('skill') ?? undefined;
+  return (
+    <PracticePage
+      key={mode}
+      initialMode={PLAY_MODE_MAP[mode as PlayModeParam]}
+      skillContext={skill}
+    />
+  );
+}
 
 function App() {
-  const [page, setPage] = useState<Page>('home');
-  const [practiceSkillContext, setPracticeSkillContext] = useState<string | undefined>();
-  const [practiceMode, setPracticeMode] = useState<GameMode>('practice');
-
-  function goToPractice(stageId?: string, mode: GameMode = 'guided') {
-    setPracticeSkillContext(stageId);
-    setPracticeMode(mode);
-    setPage('play');
-  }
-
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <button className="brand" onClick={() => setPage('home')}>Rubik Trainer <span>v0.2.0</span></button>
-        <nav aria-label="Primary navigation">
-          <button className={page === 'home' ? 'active' : ''} onClick={() => setPage('home')}><Home size={16} /> Home</button>
-          <button className={page === 'learn' ? 'active' : ''} onClick={() => setPage('learn')}><BookOpen size={16} /> Learn</button>
-          <button className={page === 'play' ? 'active' : ''} onClick={() => setPage('play')}><Gamepad2 size={16} /> Play</button>
-        </nav>
-      </header>
-      {page === 'home' && (
-        <HomePage
-          onStartPathway={() => setPage('learn')}
-          onScanCoach={() => goToPractice(undefined, 'scan')}
-          onFreePractice={() => goToPractice(undefined, 'practice')}
-        />
-      )}
-      {page === 'learn' && (
-        <LearnPage onPractice={(stageId) => goToPractice(stageId, 'guided')} />
-      )}
-      {page === 'play' && (
-        <PracticePage skillContext={practiceSkillContext} initialMode={practiceMode} />
-      )}
-    </main>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<HomeRoute />} />
+        <Route path="learn" element={<LearnIndexRedirect />} />
+        <Route path="learn/:stageId" element={<LearnRoute />} />
+        <Route path="play" element={<Navigate to="/play/free" replace />} />
+        <Route path="play/:mode" element={<PlayRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }
 

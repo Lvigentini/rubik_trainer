@@ -1,35 +1,47 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
+import { ProgressProvider } from './progress/ProgressContext';
+
+function renderApp(initialEntries: string[] = ['/']) {
+  return render(
+    <ProgressProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <App />
+      </MemoryRouter>
+    </ProgressProvider>,
+  );
+}
 
 describe('Home page — agent-supported repositioning', () => {
   it('hero communicates agent-supported coaching', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getAllByText(/agent-supported/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows three-face scan concept above the fold', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByText(/show three faces/i)).toBeInTheDocument();
   });
 
   it('mentions skills pathway', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByText(/skill pathway/i)).toBeInTheDocument();
   });
 
   it('frames practice as reinforcement, not primary promise', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByRole('button', { name: /free practice/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^start playing$/i })).not.toBeInTheDocument();
   });
 
   it('does not show score tables, move pad, or full lesson lists', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.queryByText('Completion score preview')).not.toBeInTheDocument();
     expect(screen.queryByText('Three-face assistant')).not.toBeInTheDocument();
@@ -37,7 +49,7 @@ describe('Home page — agent-supported repositioning', () => {
   });
 
   it('renders three-panel scan visual as SVG/React', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByTestId('scan-coach-preview')).toBeInTheDocument();
   });
@@ -45,8 +57,7 @@ describe('Home page — agent-supported repositioning', () => {
 
 describe('Learn page — progressive visual pathway', () => {
   function navigateToLearn() {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /learn/i }));
+    renderApp(['/learn']);
   }
 
   it('starts with a "Start here" panel', () => {
@@ -108,8 +119,7 @@ describe('Learn page — progressive visual pathway', () => {
 
 describe('Play page — scoring stays here', () => {
   function navigateToPlay() {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /^Play$/ }));
+    renderApp(['/play/free']);
   }
 
   it('has 3D cube and game mode controls', () => {
@@ -123,7 +133,7 @@ describe('Play page — scoring stays here', () => {
   });
 
   it('shows scoring in guided mode', () => {
-    navigateToPlay();
+    renderApp(['/play/coach']);
 
     expect(screen.getByText('Completion score preview')).toBeInTheDocument();
   });
@@ -158,5 +168,40 @@ describe('Play page — scoring stays here', () => {
     expect(history.getByText('R')).toBeInTheDocument();
     expect(history.getByText('F')).toBeInTheDocument();
     expect(history.queryByText('U')).not.toBeInTheDocument();
+  });
+});
+
+describe('Routing shell', () => {
+  it('shows the progress chip with 0/10 skills initially', () => {
+    renderApp();
+    expect(screen.getByText('0/10 skills')).toBeInTheDocument();
+  });
+
+  it('navigates between sections via topbar links', () => {
+    renderApp();
+    fireEvent.click(screen.getByRole('link', { name: /learn/i }));
+    expect(screen.getByText(/2×2 Foundation/i)).toBeInTheDocument();
+  });
+
+  it('/learn redirects to the current (first) lesson', () => {
+    renderApp(['/learn']);
+    expect(screen.getByRole('heading', { name: /orientation and notation/i })).toBeInTheDocument();
+  });
+
+  it('unknown lesson ids redirect to the current lesson', () => {
+    renderApp(['/learn/not-a-stage']);
+    expect(screen.getByRole('heading', { name: /orientation and notation/i })).toBeInTheDocument();
+  });
+
+  it('/play redirects to free mode and unknown modes redirect too', () => {
+    renderApp(['/play']);
+    expect(screen.getByRole('heading', { name: /practise the cube/i })).toBeInTheDocument();
+    renderApp(['/play/bogus']);
+    expect(screen.getAllByRole('heading', { name: /practise the cube/i }).length).toBeGreaterThan(0);
+  });
+
+  it('unknown routes redirect home', () => {
+    renderApp(['/nowhere']);
+    expect(screen.getAllByText(/agent-supported/i).length).toBeGreaterThanOrEqual(1);
   });
 });
