@@ -2,7 +2,14 @@ import { useState } from 'react';
 import type { SelfCheck } from '../selfChecks';
 import { checkAnswer } from '../selfChecks';
 
-export function SelfCheckCard({ selfCheck, onPractice }: { selfCheck: SelfCheck; onPractice?: () => void }) {
+type Props = {
+  selfCheck: SelfCheck;
+  onPractice?: () => void;
+  onResult?: (correct: boolean) => void;
+  allowRetry?: boolean;
+};
+
+export function SelfCheckCard({ selfCheck, onPractice, onResult, allowRetry }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
 
@@ -13,6 +20,7 @@ export function SelfCheckCard({ selfCheck, onPractice }: { selfCheck: SelfCheck;
     if (answered) return;
     setSelected(optionId);
     setAnswered(true);
+    onResult?.(checkAnswer(selfCheck, [optionId]));
   }
 
   return (
@@ -36,6 +44,9 @@ export function SelfCheckCard({ selfCheck, onPractice }: { selfCheck: SelfCheck;
           <p>{selectedOption.explanation}</p>
           {isCorrect && onPractice && (
             <button className="primary" onClick={onPractice}>Practise this skill</button>
+          )}
+          {!isCorrect && allowRetry && (
+            <button onClick={() => { setSelected(null); setAnswered(false); }}>Try again</button>
           )}
         </div>
       )}
