@@ -2,7 +2,8 @@
 import {
   createContext,
   useContext,
-  useMemo,
+  useState,
+  useCallback,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
@@ -12,7 +13,8 @@ import type { ProgressSnapshot, ProgressStore } from './types';
 const ProgressStoreContext = createContext<ProgressStore | null>(null);
 
 export function ProgressProvider({ store, children }: { store?: ProgressStore; children: ReactNode }) {
-  const value = useMemo(() => store ?? new InMemoryProgressStore(), [store]);
+  const [fallback] = useState(() => new InMemoryProgressStore());
+  const value = store ?? fallback;
   return <ProgressStoreContext.Provider value={value}>{children}</ProgressStoreContext.Provider>;
 }
 
@@ -24,8 +26,7 @@ export function useProgressStore(): ProgressStore {
 
 export function useProgress(): ProgressSnapshot {
   const store = useProgressStore();
-  return useSyncExternalStore(
-    (listener) => store.subscribe(listener),
-    () => store.getSnapshot(),
-  );
+  const subscribe = useCallback((listener: () => void) => store.subscribe(listener), [store]);
+  const getSnapshot = useCallback(() => store.getSnapshot(), [store]);
+  return useSyncExternalStore(subscribe, getSnapshot);
 }
