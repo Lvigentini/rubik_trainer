@@ -167,7 +167,7 @@ describe('Play page — modes on the URL, honest scoring', () => {
     expect(screen.getByRole('heading', { name: '3D cube' })).toBeInTheDocument();
     expect(screen.getByText('Game mode')).toBeInTheDocument();
     expect(screen.getByTestId('turn-controls')).toBeInTheDocument();
-    expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap a tile to grab its column or row/i)).toBeInTheDocument();
     // 2×2 is the default Play cube size — no slice chips (3×3-only feature).
     expect(screen.queryByRole('button', { name: /^Middle \(M\)$/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/notation shortcut controls/i)).not.toBeInTheDocument();
@@ -246,10 +246,13 @@ describe('Play page — modes on the URL, honest scoring', () => {
     navigateToPlay();
 
     fireEvent.click(screen.getByRole('button', { name: /3×3 Classic Cube/i }));
-    // Front face, middle-left tile (index 3) sits on the E slice (y=0) — see
-    // bands.test.ts's layerForSticker cases for the geometry.
+    // Front face, middle-left tile (index 3): first tap grabs its column (the
+    // left layer, L), the second tap toggles to its row — the E slice (y=0).
+    // See bands.test.ts's layerForSticker cases for the geometry.
     const frontFace = screen.getByRole('button', { name: /, F\)$/ });
     const frontStickers = within(frontFace).getAllByTestId('cube-sticker');
+    fireEvent.click(frontStickers[3]);
+    expect(screen.getByText(/turn the left layer \(L\):/i)).toBeInTheDocument();
     fireEvent.click(frontStickers[3]);
     expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));

@@ -153,55 +153,70 @@ describe('stickerInLayer — slices (M/E/S, 3x3 only)', () => {
   });
 });
 
-describe('layerForSticker', () => {
-  it('always selects the face on 2x2, for every rendered (corner) index', () => {
-    for (const index of [0, 2, 6, 8]) {
-      expect(layerForSticker('F', index, '2x2', null)).toBe('F');
-      expect(layerForSticker('U', index, '2x2', 'E')).toBe('U');
-    }
-  });
-
-  it('3x3 corner tiles (both tangent coords ±1) select the face', () => {
+describe('layerForSticker — every tile selects its column, tap again for its row', () => {
+  it('never selects the tapped face itself, on either size', () => {
     for (const face of ['F', 'U', 'R'] as FaceName[]) {
+      for (const index of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+        expect(layerForSticker(face, index, '3x3', null)).not.toBe(face);
+        expect(layerForSticker(face, index, '3x3', face)).not.toBe(face);
+      }
       for (const index of [0, 2, 6, 8]) {
-        expect(layerForSticker(face, index, '3x3', null)).toBe(face);
+        expect(layerForSticker(face, index, '2x2', null)).not.toBe(face);
       }
     }
   });
 
-  it('3x3 edge-middle tiles select the slice along the zero axis, on F/U/R', () => {
-    // Front face: top-middle (index 1) -> cubie (0,1,1), x=0 -> M.
-    expect(layerForSticker('F', 1, '3x3', null)).toBe('M');
-    // Front face: middle-left (index 3) -> cubie (-1,0,1), y=0 -> E.
-    expect(layerForSticker('F', 3, '3x3', null)).toBe('E');
-    // Front face: middle-right (index 5) -> cubie (1,0,1), y=0 -> E.
-    expect(layerForSticker('F', 5, '3x3', null)).toBe('E');
-    // Front face: bottom-middle (index 7) -> cubie (0,-1,1), x=0 -> M.
-    expect(layerForSticker('F', 7, '3x3', null)).toBe('M');
-
-    // Top face: front-middle (index 7) -> cubie (0,1,1), x=0 -> M.
-    expect(layerForSticker('U', 7, '3x3', null)).toBe('M');
-    // Top face: left-middle (index 3) -> cubie (-1,1,0), z=0 -> S.
-    expect(layerForSticker('U', 3, '3x3', null)).toBe('S');
-
-    // Right face: top-middle (index 1) -> cubie (1,1,0), z=0 -> S.
-    expect(layerForSticker('R', 1, '3x3', null)).toBe('S');
-    // Right face: middle-left (index 3) -> cubie (1,0,1), y=0 -> E.
-    expect(layerForSticker('R', 3, '3x3', null)).toBe('E');
+  it('3x3 corner tiles select their column layer first, then toggle to their row layer (F and U)', () => {
+    // F top-left (index 0) -> cubie (-1,1,1): column x=-1 -> L, row y=1 -> U.
+    expect(layerForSticker('F', 0, '3x3', null)).toBe('L');
+    expect(layerForSticker('F', 0, '3x3', 'L')).toBe('U');
+    expect(layerForSticker('F', 0, '3x3', 'U')).toBe('L');
+    // F bottom-right (index 8) -> cubie (1,-1,1): column R, row D.
+    expect(layerForSticker('F', 8, '3x3', null)).toBe('R');
+    expect(layerForSticker('F', 8, '3x3', 'R')).toBe('D');
+    // U back-left (index 0) -> cubie (-1,1,-1): column x=-1 -> L, row z=-1 -> B.
+    expect(layerForSticker('U', 0, '3x3', null)).toBe('L');
+    expect(layerForSticker('U', 0, '3x3', 'L')).toBe('B');
+    expect(layerForSticker('U', 0, '3x3', 'B')).toBe('L');
+    // A previous selection that is neither this tile's column nor its row
+    // falls back to the column-first pick.
+    expect(layerForSticker('F', 0, '3x3', 'M')).toBe('L');
   });
 
-  it('the centre tile picks a deterministic slice first, then toggles to the other on repeat clicks', () => {
-    // F's centre sits between M (x=0) and E (y=0); x is tangent to F, so M wins first.
+  it('2x2 corner tiles follow the exact same rule (both candidates are face layers)', () => {
+    // F top-left (index 0) -> cubie (-1,1,1): column L, row U — toggles L<->U.
+    expect(layerForSticker('F', 0, '2x2', null)).toBe('L');
+    expect(layerForSticker('F', 0, '2x2', 'L')).toBe('U');
+    expect(layerForSticker('F', 0, '2x2', 'U')).toBe('L');
+    // F bottom-right (index 8) -> column R, row D.
+    expect(layerForSticker('F', 8, '2x2', null)).toBe('R');
+    expect(layerForSticker('F', 8, '2x2', 'R')).toBe('D');
+  });
+
+  it('3x3 middle tiles: middle columns/rows are the M/E/S slices, centre toggle unchanged', () => {
+    // F top-middle (index 1) -> cubie (0,1,1): column M first, row U on repeat.
+    expect(layerForSticker('F', 1, '3x3', null)).toBe('M');
+    expect(layerForSticker('F', 1, '3x3', 'M')).toBe('U');
+    // F middle-left (index 3) -> cubie (-1,0,1): column L first, row E on repeat.
+    expect(layerForSticker('F', 3, '3x3', null)).toBe('L');
+    expect(layerForSticker('F', 3, '3x3', 'L')).toBe('E');
+    // Centre of F (index 4) -> (0,0,1): column M, row E — the old M<->E toggle
+    // falls out of the general rule unchanged.
     expect(layerForSticker('F', 4, '3x3', null)).toBe('M');
     expect(layerForSticker('F', 4, '3x3', 'M')).toBe('E');
     expect(layerForSticker('F', 4, '3x3', 'E')).toBe('M');
-    // A previous selection unrelated to this centre's two slices doesn't toggle
-    // anything odd — it just falls back to the deterministic first pick.
-    expect(layerForSticker('F', 4, '3x3', 'U')).toBe('M');
-
-    // R's centre sits between E (y=0) and S (z=0); x is NOT tangent to R, so S wins first.
+    // Centre of R (index 4) -> (1,0,0): column axis is z -> S, row E.
     expect(layerForSticker('R', 4, '3x3', null)).toBe('S');
     expect(layerForSticker('R', 4, '3x3', 'S')).toBe('E');
-    expect(layerForSticker('R', 4, '3x3', 'E')).toBe('S');
+  });
+
+  it("face layers stay reachable from adjacent faces: F is U's bottom row and R's left column", () => {
+    // R left-column tile (index 3) -> cubie (1,0,1): column axis z, z=1 -> F on the FIRST tap.
+    expect(layerForSticker('R', 3, '3x3', null)).toBe('F');
+    // U bottom-middle tile (index 7) -> cubie (0,1,1): column M, row z=1 -> F on the second tap.
+    expect(layerForSticker('U', 7, '3x3', null)).toBe('M');
+    expect(layerForSticker('U', 7, '3x3', 'M')).toBe('F');
+    // Works from a corner of that row too: U bottom-left (index 6) -> column L, row F.
+    expect(layerForSticker('U', 6, '3x3', 'L')).toBe('F');
   });
 });

@@ -8,11 +8,12 @@ const DRAG_CLICK_THRESHOLD_PX = 6;
 /**
  * The cube itself is the layer selector. Tapping a face's gaps/border (or
  * pressing Enter/Space on it) selects that whole face's turn (U/D/L/R/F/B).
- * On 3×3, tapping an individual sticker instead delegates to onSelectSticker
- * — the consumer runs bands.ts's layerForSticker to decide whether that tile
- * means the whole face (corners) or a middle slice (M/E/S, edge-middle/centre
- * tiles), since that decision needs the previously-selected layer (for the
- * centre tile's toggle). Turning happens elsewhere (TurnRail). Dragging
+ * Tapping an individual sticker instead delegates to onSelectSticker — the
+ * consumer runs bands.ts's layerForSticker, where every tile selects its
+ * column layer and a repeat tap toggles to its row layer (on 3×3 the middle
+ * lines are the M/E/S slices). That decision lives in the consumer because
+ * it needs the previously-selected layer for the toggle.
+ * Turning happens elsewhere (TurnRail). Dragging
  * anywhere on the stage orbits the view (onDragRotate); a drag past a small
  * threshold swallows the click so it can't double as a face/sticker tap.
  */

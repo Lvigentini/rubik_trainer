@@ -95,42 +95,41 @@ export function stickerInLayer(face: FaceName, index: number, layer: LayerId, cu
   return coordOnAxis(stickerCubieCoords(face, index), axis) === axisLayer;
 }
 
-/** The two tangent axes of a face — the ones that vary across its 3×3 grid
- * (the third, fixed axis is the face's own normal and is always ±1). */
-function tangentAxes(face: FaceName): [Axis, Axis] {
-  const fixed = FACE_LAYER[face].axis;
-  return (['x', 'y', 'z'] as Axis[]).filter((axis) => axis !== fixed) as [Axis, Axis];
+/** Which cubie axis runs across a face's rendered COLUMNS (the axis whose
+ * value FACE_POSITIONS derives from `col` — constant down any one column)
+ * and which runs down its ROWS (derived from `row`). The face's own normal
+ * axis is neither. */
+const COLUMN_AXIS: Record<FaceName, Axis> = { U: 'x', D: 'x', F: 'x', B: 'x', R: 'z', L: 'z' };
+const ROW_AXIS: Record<FaceName, Axis> = { U: 'z', D: 'z', F: 'y', B: 'y', R: 'y', L: 'y' };
+
+/** The layer a coordinate on an axis selects:
+ * x: -1→L, 0→M, +1→R;  y: +1→U, 0→E, -1→D;  z: +1→F, 0→S, -1→B. */
+function layerOnAxis(axis: Axis, coord: number): LayerId {
+  if (axis === 'x') return coord === -1 ? 'L' : coord === 0 ? 'M' : 'R';
+  if (axis === 'y') return coord === 1 ? 'U' : coord === 0 ? 'E' : 'D';
+  return coord === 1 ? 'F' : coord === 0 ? 'S' : 'B';
 }
 
-const AXIS_TO_SLICE: Record<Axis, SliceFace> = { x: 'M', y: 'E', z: 'S' };
-
 /** Pure sticker → selected-layer rule for the cube itself as the layer
- * picker (3×3): a corner tile (both tangent coords ±1) selects the whole
- * face; an edge-middle tile (exactly one tangent coord 0) selects the slice
- * along that line; the centre tile (both tangent coords 0) sits between two
- * slices and toggles between them on repeated clicks. 2×2 only ever renders
- * corner tiles, but this returns the face outright for it regardless, per
- * the pinned "2×2 unchanged" rule. */
+ * picker: EVERY tile selects a line through it. The first tap grabs the
+ * tile's column layer, tapping the same tile again toggles to its row layer
+ * (and back). On 3×3 a middle column/row is one of the M/E/S slices; on 2×2
+ * coordinates are only ever ±1, so both candidates are face layers (e.g.
+ * F's top-left tile toggles L↔U). Tapping a tile never selects the tapped
+ * face itself — that's what the face div's gap/border click, Enter/Space,
+ * and the picker chips are for. The rule is size-independent by
+ * construction; `cubeSize` stays in the signature so call sites (which all
+ * have a cube size in hand) read uniformly. */
 export function layerForSticker(
   face: FaceName,
   index: number,
-  cubeSize: CubeSizeId,
+  _cubeSize: CubeSizeId,
   previous: LayerId | null,
 ): LayerId {
-  if (cubeSize === '2x2') return face;
   const coords = stickerCubieCoords(face, index);
-  const [axisA, axisB] = tangentAxes(face);
-  const zeroA = coordOnAxis(coords, axisA) === 0;
-  const zeroB = coordOnAxis(coords, axisB) === 0;
-  if (!zeroA && !zeroB) return face; // corner tile
-  if (zeroA !== zeroB) return AXIS_TO_SLICE[zeroA ? axisA : axisB]; // edge-middle tile
-
-  // Centre tile: the two candidate slices are along axisA and axisB.
-  const sliceA = AXIS_TO_SLICE[axisA];
-  const sliceB = AXIS_TO_SLICE[axisB];
-  if (previous === sliceA) return sliceB;
-  if (previous === sliceB) return sliceA;
-  // Deterministic first pick: prefer M (x=0) if x is tangent to this face, else S.
-  // (x tangent here only for U/D/F/B; R/L's tangent axes are y/z, so S wins.)
-  return axisA === 'x' || axisB === 'x' ? 'M' : 'S';
+  const column = layerOnAxis(COLUMN_AXIS[face], coordOnAxis(coords, COLUMN_AXIS[face]));
+  const row = layerOnAxis(ROW_AXIS[face], coordOnAxis(coords, ROW_AXIS[face]));
+  if (previous === column) return row;
+  if (previous === row) return column;
+  return column;
 }

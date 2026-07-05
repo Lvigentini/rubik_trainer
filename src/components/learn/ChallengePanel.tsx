@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyAlgorithm,
   applyTurn,
-  COLOR_LABELS,
   createSolvedCube,
   formatAlgorithm,
   inverseTurn,
@@ -37,12 +36,25 @@ function splitTurn(turn: Turn): { face: FaceName; suffix: '' | "'" | '2' } {
   return { face, suffix };
 }
 
-/** "tap the top (white) face, then press ⟳" — the words behind a bare "U". */
+/** How to grab each face layer by tapping a tile, under the "tile selects
+ * its column, tap again for its row" rule: U/D are rows, L/R are columns,
+ * and F/B are the rows/columns hugging the front/back edge of adjacent faces. */
+const FACE_TILE_HINT: Record<FaceName, string> = {
+  U: 'top-row tile',
+  D: 'bottom-row tile',
+  L: 'left-column tile',
+  R: 'right-column tile',
+  F: 'front-edge tile',
+  B: 'back-edge tile',
+};
+
+/** "select the top layer (the Top chip, or tap a top-row tile), then press ⟳"
+ * — the words behind a bare "U". */
 function describeMove(turn: Turn): string {
   const { face, suffix } = splitTurn(turn);
   const word = FACE_LAYER_WORD[face];
-  const color = COLOR_LABELS[face].toLowerCase();
-  return `tap the ${word} (${color}) face, then press ${DIRECTION_GLYPH[suffix]}`;
+  const chip = word.charAt(0).toUpperCase() + word.slice(1);
+  return `select the ${word} layer (the ${chip} chip, or tap a ${FACE_TILE_HINT[face]}), then press ${DIRECTION_GLYPH[suffix]}`;
 }
 
 /** "right layer, counter-clockwise" — the words behind a bare "R′", for the
@@ -58,8 +70,8 @@ function HowToStrip() {
   return (
     <div className="how-to-strip" data-testid="how-to-strip">
       <p>
-        <strong>How to move the cube:</strong> ① tap a face to grab its layer ② turn it with the big arrow
-        buttons beside the cube ③ drag around the cube to spin your view.
+        <strong>How to move the cube:</strong> ① tap a tile to grab its column — tap again for its row
+        ② turn it with the big arrow buttons ③ drag around the cube to spin your view.
         Letters like U and R′ are cube notation — you&rsquo;ll learn them as you go.
       </p>
       <button

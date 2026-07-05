@@ -103,7 +103,7 @@ describe('ChallengePanel — first-time guidance strip', () => {
   it('shows the how-to-move strip and can be dismissed', () => {
     render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
     const strip = within(screen.getByTestId('how-to-strip'));
-    expect(strip.getByText(/tap a face to grab its layer/i)).toBeInTheDocument();
+    expect(strip.getByText(/tap a tile to grab its column — tap again for its row/i)).toBeInTheDocument();
     fireEvent.click(strip.getByRole('button', { name: /dismiss how-to-move guidance/i }));
     expect(screen.queryByTestId('how-to-strip')).not.toBeInTheDocument();
   });
@@ -135,7 +135,7 @@ describe('ChallengePanel — drag-to-orbit', () => {
     fireEvent.pointerMove(stage, { pointerId: 1, clientX: 140, clientY: 100 });
     fireEvent.pointerUp(stage, { pointerId: 1, clientX: 140, clientY: 100 });
     expect(cube.style.transform).toBe('rotateX(-28deg) rotateY(-22deg)');
-    expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap a tile to grab its column or row/i)).toBeInTheDocument();
   });
 });
 
@@ -159,28 +159,32 @@ describe('ChallengePanel — 3×3 sticker-level layer selection', () => {
     return within(frontFace).getAllByTestId('cube-sticker');
   }
 
-  it('tapping a corner tile still selects the whole face', () => {
+  it('tapping a corner tile on the front face selects its column layer, tapping again its row layer', () => {
     render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
-    fireEvent.click(frontFaceStickers()[0]); // top-left corner
-    expect(screen.getByText(/turn the front layer \(F\):/i)).toBeInTheDocument();
+    // F top-left corner (index 0): column -> the left layer (L), row -> top (U).
+    fireEvent.click(frontFaceStickers()[0]);
+    expect(screen.getByText(/turn the left layer \(L\):/i)).toBeInTheDocument();
+    fireEvent.click(frontFaceStickers()[0]);
+    expect(screen.getByText(/turn the top layer \(U\):/i)).toBeInTheDocument();
+    fireEvent.click(frontFaceStickers()[0]);
+    expect(screen.getByText(/turn the left layer \(L\):/i)).toBeInTheDocument();
   });
 
-  it('tapping an edge-middle tile selects the slice along it, and the rail turns it', () => {
+  it('tapping a middle-column tile selects the slice along it, and the rail turns it', () => {
     render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
-    // Front face, middle-left tile (index 3): y=0 -> the E (equator) slice.
-    fireEvent.click(frontFaceStickers()[3]);
-    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+    // Front face, top-middle tile (index 1): its column is the M slice (x=0).
+    fireEvent.click(frontFaceStickers()[1]);
+    expect(screen.getByText(/turn the middle slice \(M\):/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));
-    // The turn actually applied: selecting the same tile again still shows the
-    // E slice heading (a no-op face-turn would have reset selection to null).
-    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+    // The turn applied without disturbing the selection.
+    expect(screen.getByText(/turn the middle slice \(M\):/i)).toBeInTheDocument();
   });
 
   it('the centre tile toggles between its two slices on repeated taps', () => {
     render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
     const centre = () => frontFaceStickers()[4];
-    // Front face centre sits between M (x=0) and E (y=0); M wins the first tap.
+    // Front face centre: column M (x=0) first, then toggles to row E (y=0).
     fireEvent.click(centre());
     expect(screen.getByText(/turn the middle slice \(M\):/i)).toBeInTheDocument();
     fireEvent.click(centre());
@@ -191,7 +195,7 @@ describe('ChallengePanel — 3×3 sticker-level layer selection', () => {
 
   it('no whitish selected-face veil is applied for a slice selection', () => {
     const { container } = render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
-    fireEvent.click(frontFaceStickers()[3]); // selects the E slice
+    fireEvent.click(frontFaceStickers()[1]); // selects the M slice
     expect(container.querySelector('.selected-face')).not.toBeInTheDocument();
   });
 });

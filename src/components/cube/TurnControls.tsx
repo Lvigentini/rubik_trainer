@@ -123,7 +123,7 @@ export function TurnRail({
           </button>
         </>
       ) : (
-        <p className="turn-controls-hint">Tap a face of the cube to grab its layer.</p>
+        <p className="turn-controls-hint">Tap a tile to grab its column or row.</p>
       )}
     </div>
   );
