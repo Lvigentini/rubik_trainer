@@ -14,7 +14,7 @@ import { CHALLENGES, demoAlgorithm, isGoalMet } from '../../challenges';
 import type { LearningStage } from '../../learningPath';
 import { FACE_LAYER_WORD } from '../cube/bands';
 import { CubeView } from '../cube/CubeView';
-import { TurnControls } from '../cube/TurnControls';
+import { FacePicker, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
 
 type Props = {
@@ -58,7 +58,8 @@ function HowToStrip() {
   return (
     <div className="how-to-strip" data-testid="how-to-strip">
       <p>
-        <strong>How to move the cube:</strong> ① tap a face to grab its layer ② use the arrow buttons to turn it.
+        <strong>How to move the cube:</strong> ① tap a face to grab its layer ② turn it with the big arrow
+        buttons beside the cube ③ drag around the cube to spin your view.
         Letters like U and R′ are cube notation — you&rsquo;ll learn them as you go.
       </p>
       <button
@@ -89,7 +90,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
   const [demoCursor, setDemoCursor] = useState<number | null>(null);
   const firedRef = useRef(false);
   const revertTimerRef = useRef<number | null>(null);
-  const { tilt, rotateView, rotateViewVertical, resetView } = useCubeTilt();
+  const { tilt, rotateView, rotateViewVertical, dragRotate, resetView } = useCubeTilt();
 
   const stateGoalMet = !isSequence && isGoalMet(challenge.goal as Exclude<typeof challenge.goal, 'sequence'>, cube);
   const goalMet = isSequence ? matched === target.length && target.length > 0 : stateGoalMet;
@@ -172,21 +173,25 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
       </header>
 
       <div className="challenge-cube">
-        <CubeView
-          grid={grid}
-          tilt={tilt}
-          cubeSize={stage.cubeSize}
-          selectedFace={selectedFace}
-          onSelectFace={setSelectedFace}
-        />
-        <TurnControls
-          selectedFace={selectedFace}
-          onSelectFace={setSelectedFace}
-          onTurn={(turn) => applyMove(turn)}
-          onRotateView={rotateView}
-          onRotateViewVertical={rotateViewVertical}
-          onResetView={resetView}
-        />
+        <div className="cube-area">
+          <TurnRail selectedFace={selectedFace} onTurn={(turn) => applyMove(turn)} />
+          <div className="cube-stage-shell">
+            <ViewControls
+              onRotateView={rotateView}
+              onRotateViewVertical={rotateViewVertical}
+              onResetView={resetView}
+            />
+            <CubeView
+              grid={grid}
+              tilt={tilt}
+              cubeSize={stage.cubeSize}
+              selectedFace={selectedFace}
+              onSelectFace={setSelectedFace}
+              onDragRotate={dragRotate}
+            />
+          </div>
+        </div>
+        <FacePicker selectedFace={selectedFace} onSelectFace={setSelectedFace} />
       </div>
 
       {isSequence && target.length > 0 && !goalMet && (

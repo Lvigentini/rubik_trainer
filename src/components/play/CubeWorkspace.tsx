@@ -13,7 +13,7 @@ import {
 import { CUBE_SIZES, type CubeSizeId } from '../../trainer';
 import type { SliceFace } from '../cube/bands';
 import { CubeView } from '../cube/CubeView';
-import { SliceControls, TurnControls } from '../cube/TurnControls';
+import { FacePicker, SliceControls, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
 import { formatTime } from './formatTime';
 
@@ -107,7 +107,7 @@ export function CubeWorkspace({
   const { history: moveHistory, cursor: historyCursor } = historyState;
   const [lastScramble, setLastScramble] = useState<Turn[]>(() => initialScramble ?? []);
   const [scrambleAt, setScrambleAt] = useState<number | null>(() => (initialScramble?.length ? Date.now() : null));
-  const { tilt, rotateView, rotateViewVertical, resetView } = useCubeTilt();
+  const { tilt, rotateView, rotateViewVertical, dragRotate, resetView } = useCubeTilt();
   const [selectedFace, setSelectedFace] = useState<FaceName | null>(null);
   const [selectedSlice, setSelectedSlice] = useState<SliceFace | null>(null);
   const [timerStart, setTimerStart] = useState<number | null>(null);
@@ -288,22 +288,25 @@ export function CubeWorkspace({
         <div className="panel-header">
           <h2>3D cube</h2>
         </div>
-        <CubeView
-          grid={grid}
-          tilt={tilt}
-          cubeSize={selectedCubeSize}
-          selectedFace={selectedFace}
-          onSelectFace={setSelectedFace}
-        />
-
-        <TurnControls
-          selectedFace={selectedFace}
-          onSelectFace={setSelectedFace}
-          onTurn={applyMove}
-          onRotateView={rotateView}
-          onRotateViewVertical={rotateViewVertical}
-          onResetView={resetView}
-        />
+        <div className="cube-area">
+          <TurnRail selectedFace={selectedFace} onTurn={applyMove} />
+          <div className="cube-stage-shell">
+            <ViewControls
+              onRotateView={rotateView}
+              onRotateViewVertical={rotateViewVertical}
+              onResetView={resetView}
+            />
+            <CubeView
+              grid={grid}
+              tilt={tilt}
+              cubeSize={selectedCubeSize}
+              selectedFace={selectedFace}
+              onSelectFace={setSelectedFace}
+              onDragRotate={dragRotate}
+            />
+          </div>
+        </div>
+        <FacePicker selectedFace={selectedFace} onSelectFace={setSelectedFace} />
 
         <SliceControls
           cubeSize={selectedCubeSize}

@@ -18,6 +18,15 @@ export function useCubeTilt(defaultTilt: { x: number; y: number } = DEFAULT_TILT
   const rotateViewVertical = useCallback((direction: -1 | 1) => {
     setTilt((v) => ({ ...v, x: Math.min(MAX_TILT_X, Math.max(MIN_TILT_X, v.x + direction * 22)) }));
   }, []);
+  /* Free orbit from pointer drag: horizontal drag spins (y), vertical drag
+   * tips (x). x is clamped a little wider than the buttons allow so dragging
+   * feels free without ever flipping the cube upside-down. */
+  const dragRotate = useCallback((dxPx: number, dyPx: number) => {
+    setTilt((v) => ({
+      x: Math.min(90, Math.max(-90, v.x - dyPx * 0.4)),
+      y: v.y + dxPx * 0.4,
+    }));
+  }, []);
   const resetView = useCallback(() => setTilt(defaultTilt), [defaultTilt]);
-  return { tilt, rotateView, rotateViewVertical, resetView };
+  return { tilt, rotateView, rotateViewVertical, dragRotate, resetView };
 }

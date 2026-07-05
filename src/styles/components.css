@@ -217,18 +217,28 @@ kbd {
   .cube-scene { --cube-scale: 0.82; }
 }
 
-/* --- Turn controls: the fixed, labeled strip below the cube. Selection
-   comes from tapping the cube itself; this only turns whatever is selected,
-   plus the (visually distinct, muted) view-rotate buttons. --- */
-.turn-controls {
+/* --- Cube area: prominent turn rail at the left, stage (with the view
+   cluster pinned top-right) filling the rest. Selection comes from tapping
+   the cube or the labeled picker below; the rail only turns it. --- */
+.cube-area {
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  margin-top: 12px;
+}
+
+.cube-stage-shell {
+  position: relative;
+  min-width: 0;
+}
+
+.turn-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 108px;
+  padding: 12px;
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   border: 1px solid var(--border-soft);
@@ -238,33 +248,62 @@ kbd {
   margin: 0;
   color: var(--text-strong);
   font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .turn-controls-hint {
   margin: 0;
   color: var(--text-muted);
+  font-size: 0.85rem;
+  max-width: 110px;
 }
 
-.turn-buttons {
+.view-cluster {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+}
+
+.view-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-raised) 82%, transparent);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  box-shadow: none;
+}
+
+.view-btn:hover {
+  border-color: var(--text-muted);
+  background: var(--surface-raised);
+  color: var(--text-body);
 }
 
 .turn-btn {
   min-width: 56px;
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 48px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
   border-radius: var(--radius-md);
   background: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 2px solid var(--border-strong);
   color: var(--text-strong);
   font-family: ui-monospace, monospace;
   font-weight: 800;
-  box-shadow: none;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-card);
 }
 
 .turn-btn span {
@@ -332,34 +371,29 @@ kbd {
   border: 1px solid color-mix(in srgb, var(--text-strong) 20%, transparent);
 }
 
-.view-rotate-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-left: auto;
+/* Drag-to-orbit affordance: grabbable stage, touch drags stay on the cube. */
+.cube-stage-draggable {
+  cursor: grab;
+  touch-action: none;
 }
 
-.view-rotate-controls button {
-  min-height: 30px;
-  padding: 0 10px;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  border: 1px dashed var(--border-strong);
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.82rem;
-  box-shadow: none;
-}
-
-.view-rotate-controls button:hover {
-  border-color: var(--text-muted);
-  background: var(--surface-raised);
-  color: var(--text-body);
+.cube-stage-draggable:active {
+  cursor: grabbing;
 }
 
 @media (max-width: 680px) {
-  .turn-controls { flex-direction: column; align-items: stretch; }
-  .view-rotate-controls { margin-left: 0; justify-content: center; }
+  /* No room for a side rail on phones: rail drops below the cube, horizontal. */
+  .cube-area { grid-template-columns: 1fr; }
+  .turn-rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    order: 1;
+    min-width: 0;
+  }
+  .turn-controls-heading,
+  .turn-controls-hint { width: 100%; text-align: center; max-width: none; }
 }
 
 /* --- Play-only slice row (M/E/S, 3×3 only) --- */

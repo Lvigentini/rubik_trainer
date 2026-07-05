@@ -124,3 +124,17 @@ describe('ChallengePanel — labeled layer picker and view tipping', () => {
     expect(screen.getByRole('button', { name: /tip the view up to see the top face/i })).toBeInTheDocument();
   });
 });
+
+describe('ChallengePanel — drag-to-orbit', () => {
+  it('dragging on the stage rotates the view and does not select a face', () => {
+    const { container } = render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    const stage = screen.getByLabelText(/interactive 2×2 cube preview/i);
+    const cube = container.querySelector('.cube') as HTMLElement;
+    expect(cube.style.transform).toBe('rotateX(-28deg) rotateY(-38deg)');
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 100, clientY: 100, isPrimary: true });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 140, clientY: 100 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 140, clientY: 100 });
+    expect(cube.style.transform).toBe('rotateX(-28deg) rotateY(-22deg)');
+    expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
+  });
+});
