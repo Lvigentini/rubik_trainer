@@ -107,7 +107,7 @@ export function CubeWorkspace({
   const { history: moveHistory, cursor: historyCursor } = historyState;
   const [lastScramble, setLastScramble] = useState<Turn[]>(() => initialScramble ?? []);
   const [scrambleAt, setScrambleAt] = useState<number | null>(() => (initialScramble?.length ? Date.now() : null));
-  const { tilt, rotateView, resetView } = useCubeTilt();
+  const { tilt, rotateView, rotateViewVertical, resetView } = useCubeTilt();
   const [selectedFace, setSelectedFace] = useState<FaceName | null>(null);
   const [selectedSlice, setSelectedSlice] = useState<SliceFace | null>(null);
   const [timerStart, setTimerStart] = useState<number | null>(null);
@@ -298,8 +298,10 @@ export function CubeWorkspace({
 
         <TurnControls
           selectedFace={selectedFace}
+          onSelectFace={setSelectedFace}
           onTurn={applyMove}
           onRotateView={rotateView}
+          onRotateViewVertical={rotateViewVertical}
           onResetView={resetView}
         />
 

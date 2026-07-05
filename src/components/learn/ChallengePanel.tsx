@@ -89,7 +89,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
   const [demoCursor, setDemoCursor] = useState<number | null>(null);
   const firedRef = useRef(false);
   const revertTimerRef = useRef<number | null>(null);
-  const { tilt, rotateView, resetView } = useCubeTilt();
+  const { tilt, rotateView, rotateViewVertical, resetView } = useCubeTilt();
 
   const stateGoalMet = !isSequence && isGoalMet(challenge.goal as Exclude<typeof challenge.goal, 'sequence'>, cube);
   const goalMet = isSequence ? matched === target.length && target.length > 0 : stateGoalMet;
@@ -181,8 +181,10 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
         />
         <TurnControls
           selectedFace={selectedFace}
+          onSelectFace={setSelectedFace}
           onTurn={(turn) => applyMove(turn)}
           onRotateView={rotateView}
+          onRotateViewVertical={rotateViewVertical}
           onResetView={resetView}
         />
       </div>

@@ -1,12 +1,14 @@
-import type { FaceName, Turn } from '../../cube';
+import { COLORS, COLOR_LABELS, type FaceName, type Turn } from '../../cube';
 import type { CubeSizeId } from '../../trainer';
 import { FACE_LAYER_WORD, type SliceFace } from './bands';
 
 function ViewRotateControls({
   onRotateView,
+  onRotateViewVertical,
   onResetView,
 }: {
   onRotateView: (direction: -1 | 1) => void;
+  onRotateViewVertical: (direction: -1 | 1) => void;
   onResetView: () => void;
 }) {
   return (
@@ -18,6 +20,24 @@ function ViewRotateControls({
         title="Rotate the view left — this only changes what you can see, it doesn't turn the cube"
       >
         ↶ view
+      </button>
+      <button
+        type="button"
+        className="view-rotate-btn"
+        onClick={() => onRotateViewVertical(-1)}
+        aria-label="Tip the view up to see the top face"
+        title="Tip the view to see the top face — doesn't turn the cube"
+      >
+        view ↥
+      </button>
+      <button
+        type="button"
+        className="view-rotate-btn"
+        onClick={() => onRotateViewVertical(1)}
+        aria-label="Tip the view down to see the bottom face"
+        title="Tip the view to see the bottom face — doesn't turn the cube"
+      >
+        view ↧
       </button>
       <button
         type="button"
@@ -39,6 +59,43 @@ function ViewRotateControls({
   );
 }
 
+/* Order mirrors how learners meet the faces: the three visible ones first. */
+const PICKER_FACES: FaceName[] = ['U', 'F', 'R', 'D', 'L', 'B'];
+
+function capitalize(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+/** Always-available labeled fallback for layer selection — guarantees every
+ * layer (including bottom/back) is reachable even when a face is hard to tap
+ * on the 3D cube, and doubles as a colour ↔ face-name legend. */
+function FacePicker({
+  selectedFace,
+  onSelectFace,
+}: {
+  selectedFace: FaceName | null;
+  onSelectFace: (face: FaceName) => void;
+}) {
+  return (
+    <div className="face-picker" data-testid="face-picker" aria-label="Pick a layer by name">
+      <span className="face-picker-label">Or pick a layer:</span>
+      {PICKER_FACES.map((face) => (
+        <button
+          key={face}
+          type="button"
+          className={`face-picker-chip ${selectedFace === face ? 'selected' : ''}`}
+          aria-pressed={selectedFace === face}
+          onClick={() => onSelectFace(face)}
+          title={`The ${FACE_LAYER_WORD[face]} layer — ${COLOR_LABELS[face].toLowerCase()} face, written ${face}`}
+        >
+          <span className="face-picker-swatch" style={{ background: COLORS[face] }} aria-hidden="true" />
+          {capitalize(FACE_LAYER_WORD[face])}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * The fixed, labeled control strip rendered below the cube. Selection (which
  * face/layer) comes from tapping the cube itself (CubeView); this component
@@ -49,13 +106,17 @@ function ViewRotateControls({
  */
 export function TurnControls({
   selectedFace,
+  onSelectFace,
   onTurn,
   onRotateView,
+  onRotateViewVertical,
   onResetView,
 }: {
   selectedFace: FaceName | null;
+  onSelectFace: (face: FaceName) => void;
   onTurn: (turn: Turn) => void;
   onRotateView: (direction: -1 | 1) => void;
+  onRotateViewVertical: (direction: -1 | 1) => void;
   onResetView: () => void;
 }) {
   return (
@@ -98,7 +159,12 @@ export function TurnControls({
       ) : (
         <p className="turn-controls-hint">Tap a face of the cube to grab its layer.</p>
       )}
-      <ViewRotateControls onRotateView={onRotateView} onResetView={onResetView} />
+      <FacePicker selectedFace={selectedFace} onSelectFace={onSelectFace} />
+      <ViewRotateControls
+        onRotateView={onRotateView}
+        onRotateViewVertical={onRotateViewVertical}
+        onResetView={onResetView}
+      />
     </div>
   );
 }

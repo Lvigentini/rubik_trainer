@@ -108,3 +108,19 @@ describe('ChallengePanel — first-time guidance strip', () => {
     expect(screen.queryByTestId('how-to-strip')).not.toBeInTheDocument();
   });
 });
+
+describe('ChallengePanel — labeled layer picker and view tipping', () => {
+  it('selects any layer from the picker, including bottom, without tapping the cube', () => {
+    render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    const picker = within(screen.getByTestId('face-picker'));
+    fireEvent.click(picker.getByRole('button', { name: /^bottom$/i }));
+    expect(screen.getByText(/turn the bottom layer \(D\):/i)).toBeInTheDocument();
+    expect(picker.getByRole('button', { name: /^bottom$/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers vertical view tipping so the bottom face can be seen', () => {
+    render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    expect(screen.getByRole('button', { name: /tip the view down to see the bottom face/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tip the view up to see the top face/i })).toBeInTheDocument();
+  });
+});
