@@ -11,9 +11,9 @@ import {
   toFaceGrid,
 } from '../../cube';
 import { CUBE_SIZES, type CubeSizeId } from '../../trainer';
-import type { SliceFace } from '../cube/bands';
+import { layerForSticker, type LayerId } from '../cube/bands';
 import { CubeView } from '../cube/CubeView';
-import { FacePicker, SliceControls, TurnRail, ViewControls } from '../cube/TurnControls';
+import { FacePicker, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
 import { formatTime } from './formatTime';
 
@@ -42,10 +42,10 @@ const PRIME_KEYS = new Set(['U', 'R', 'F', 'D', 'L', 'B', 'M', 'E', 'S']);
 
 /**
  * The single owner of a Play cube session: cube state, move history +
- * undo/redo, the keyboard map, tilt, and scramble/reset/timer. Layer/slice
- * selection lives here too (selectedFace/selectedSlice) purely to wire
- * CubeView + TurnControls + SliceControls — it isn't part of CubeSession
- * since no consuming panel needs it.
+ * undo/redo, the keyboard map, tilt, and scramble/reset/timer. Layer
+ * selection lives here too (selectedLayer, covering both faces and, on 3×3,
+ * middle slices) purely to wire CubeView + TurnControls — it isn't part of
+ * CubeSession since no consuming panel needs it.
  * Free Play and Solve Coach both mount one of these; Scan Coach mounts one
  * too so it can reuse the interactive cube view for importing faces. Only
  * one CubeWorkspace is ever mounted at a time (PracticePage renders exactly
@@ -108,8 +108,7 @@ export function CubeWorkspace({
   const [lastScramble, setLastScramble] = useState<Turn[]>(() => initialScramble ?? []);
   const [scrambleAt, setScrambleAt] = useState<number | null>(() => (initialScramble?.length ? Date.now() : null));
   const { tilt, rotateView, rotateViewVertical, dragRotate, resetView } = useCubeTilt();
-  const [selectedFace, setSelectedFace] = useState<FaceName | null>(null);
-  const [selectedSlice, setSelectedSlice] = useState<SliceFace | null>(null);
+  const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
   const [timerStart, setTimerStart] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [liveElapsedMs, setLiveElapsedMs] = useState(0);
@@ -206,11 +205,17 @@ export function CubeWorkspace({
   const setCubeSize = useCallback(
     (id: CubeSizeId) => {
       setSelectedCubeSizeState(id);
-      setSelectedFace(null);
-      setSelectedSlice(null);
+      setSelectedLayer(null);
       resetCube();
     },
     [resetCube],
+  );
+
+  const selectSticker = useCallback(
+    (face: FaceName, index: number) => {
+      setSelectedLayer((previous) => layerForSticker(face, index, selectedCubeSize, previous));
+    },
+    [selectedCubeSize],
   );
 
   const startStopTimer = useCallback(() => {
@@ -289,7 +294,7 @@ export function CubeWorkspace({
           <h2>3D cube</h2>
         </div>
         <div className="cube-area">
-          <TurnRail selectedFace={selectedFace} onTurn={applyMove} />
+          <TurnRail selectedLayer={selectedLayer} onTurn={applyMove} />
           <div className="cube-stage-shell">
             <ViewControls
               onRotateView={rotateView}
@@ -300,20 +305,14 @@ export function CubeWorkspace({
               grid={grid}
               tilt={tilt}
               cubeSize={selectedCubeSize}
-              selectedFace={selectedFace}
-              onSelectFace={setSelectedFace}
+              selectedLayer={selectedLayer}
+              onSelectLayer={setSelectedLayer}
+              onSelectSticker={selectSticker}
               onDragRotate={dragRotate}
             />
           </div>
         </div>
-        <FacePicker selectedFace={selectedFace} onSelectFace={setSelectedFace} />
-
-        <SliceControls
-          cubeSize={selectedCubeSize}
-          selectedSlice={selectedSlice}
-          onSelectSlice={setSelectedSlice}
-          onTurn={applyMove}
-        />
+        <FacePicker cubeSize={selectedCubeSize} selectedLayer={selectedLayer} onSelectLayer={setSelectedLayer} />
 
         <div className="move-history">
           <div className="history-header">

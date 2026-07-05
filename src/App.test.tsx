@@ -168,8 +168,8 @@ describe('Play page — modes on the URL, honest scoring', () => {
     expect(screen.getByText('Game mode')).toBeInTheDocument();
     expect(screen.getByTestId('turn-controls')).toBeInTheDocument();
     expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
-    // 2×2 is the default Play cube size — no slice row (3×3-only feature).
-    expect(screen.queryByTestId('slice-controls')).not.toBeInTheDocument();
+    // 2×2 is the default Play cube size — no slice chips (3×3-only feature).
+    expect(screen.queryByRole('button', { name: /^Middle \(M\)$/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/notation shortcut controls/i)).not.toBeInTheDocument();
   });
 
@@ -242,13 +242,30 @@ describe('Play page — modes on the URL, honest scoring', () => {
     expect(scoped.getByText(/incomplete/i)).toBeInTheDocument();
   });
 
-  it('lets 3x3 players select the E slice from the Play-only slice row and turn it', () => {
+  it('lets 3x3 players select the E slice by tapping a middle-row tile on the cube, and turn it', () => {
     navigateToPlay();
 
     fireEvent.click(screen.getByRole('button', { name: /3×3 Classic Cube/i }));
-    const sliceRow = within(screen.getByTestId('slice-controls'));
-    fireEvent.click(sliceRow.getByRole('button', { name: /select the e slice/i }));
-    fireEvent.click(sliceRow.getByRole('button', { name: /turn e slice clockwise/i }));
+    // Front face, middle-left tile (index 3) sits on the E slice (y=0) — see
+    // bands.test.ts's layerForSticker cases for the geometry.
+    const frontFace = screen.getByRole('button', { name: /, F\)$/ });
+    const frontStickers = within(frontFace).getAllByTestId('cube-sticker');
+    fireEvent.click(frontStickers[3]);
+    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));
+
+    const history = within(screen.getByTestId('move-history'));
+    expect(history.getByText('E')).toBeInTheDocument();
+  });
+
+  it('lets 3x3 players select the E slice from the FacePicker chip and turn it', () => {
+    navigateToPlay();
+
+    fireEvent.click(screen.getByRole('button', { name: /3×3 Classic Cube/i }));
+    const picker = within(screen.getByTestId('face-picker'));
+    fireEvent.click(picker.getByRole('button', { name: /^Equator \(E\)$/i }));
+    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));
 
     const history = within(screen.getByTestId('move-history'));
     expect(history.getByText('E')).toBeInTheDocument();

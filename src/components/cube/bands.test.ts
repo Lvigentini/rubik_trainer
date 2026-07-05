@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FACE_NAMES, applyTurn, createSolvedCube, toFaceGrid, type FaceName } from '../../cube';
-import { stickerCubieCoords, stickerInLayer, stickerInSlice } from './bands';
+import { layerForSticker, stickerCubieCoords, stickerInLayer } from './bands';
 
 const SIDE_FACES: FaceName[] = ['F', 'R', 'B', 'L'];
 
@@ -94,17 +94,114 @@ describe('stickerCubieCoords', () => {
   });
 });
 
-describe('stickerInSlice', () => {
+describe('stickerInLayer — slices (M/E/S, 3x3 only)', () => {
   it('M (middle, x=0) touches the centre column of U/F/D/B and never L/R', () => {
     for (const face of ['U', 'F', 'D', 'B'] as FaceName[]) {
-      expect(stickerInSlice(face, 1, 'M')).toBe(true);
-      expect(stickerInSlice(face, 4, 'M')).toBe(true);
-      expect(stickerInSlice(face, 7, 'M')).toBe(true);
-      expect(stickerInSlice(face, 0, 'M')).toBe(false);
+      expect(stickerInLayer(face, 1, 'M', '3x3')).toBe(true);
+      expect(stickerInLayer(face, 4, 'M', '3x3')).toBe(true);
+      expect(stickerInLayer(face, 7, 'M', '3x3')).toBe(true);
+      expect(stickerInLayer(face, 0, 'M', '3x3')).toBe(false);
     }
     for (let index = 0; index < 9; index += 1) {
-      expect(stickerInSlice('L', index, 'M')).toBe(false);
-      expect(stickerInSlice('R', index, 'M')).toBe(false);
+      expect(stickerInLayer('L', index, 'M', '3x3')).toBe(false);
+      expect(stickerInLayer('R', index, 'M', '3x3')).toBe(false);
     }
+  });
+
+  it('M highlights exactly the 12 stickers of the middle-x slice, cross-checked against the real engine', () => {
+    // Same cross-check style as stickerCubieCoords above, but for a slice turn
+    // (M has no face of its own, so we drive it through the real engine's M turn).
+    const before = toFaceGrid(createSolvedCube());
+    const after = toFaceGrid(applyTurn(createSolvedCube(), 'M'));
+    let highlighted = 0;
+    for (const face of FACE_NAMES) {
+      for (let index = 0; index < 9; index += 1) {
+        const inSlice = stickerInLayer(face, index, 'M', '3x3');
+        if (inSlice) highlighted += 1;
+        else expect(after[face][index]).toBe(before[face][index]);
+      }
+    }
+    expect(highlighted).toBe(12); // 3 stickers each on U, F, D, B
+  });
+
+  it('E (equator, y=0) touches the middle row of F/R/B/L and never U/D', () => {
+    for (const face of ['F', 'R', 'B', 'L'] as FaceName[]) {
+      expect(stickerInLayer(face, 3, 'E', '3x3')).toBe(true);
+      expect(stickerInLayer(face, 4, 'E', '3x3')).toBe(true);
+      expect(stickerInLayer(face, 5, 'E', '3x3')).toBe(true);
+    }
+    for (let index = 0; index < 9; index += 1) {
+      expect(stickerInLayer('U', index, 'E', '3x3')).toBe(false);
+      expect(stickerInLayer('D', index, 'E', '3x3')).toBe(false);
+    }
+  });
+
+  it('S (standing, z=0) touches the middle band of U/R/D/L and never F/B', () => {
+    for (let index = 0; index < 9; index += 1) {
+      expect(stickerInLayer('F', index, 'S', '3x3')).toBe(false);
+      expect(stickerInLayer('B', index, 'S', '3x3')).toBe(false);
+    }
+    expect(stickerInLayer('U', 3, 'S', '3x3')).toBe(true);
+    expect(stickerInLayer('U', 4, 'S', '3x3')).toBe(true);
+    expect(stickerInLayer('U', 5, 'S', '3x3')).toBe(true);
+  });
+
+  it('never reports a slice sticker for a cube size that does not render it', () => {
+    // 2x2 never renders index 4 (the centre); a slice check must not leak past
+    // the STICKER_INDICES_BY_SIZE gate that stickerInLayer already enforces for faces.
+    expect(stickerInLayer('F', 4, 'M', '2x2')).toBe(false);
+  });
+});
+
+describe('layerForSticker', () => {
+  it('always selects the face on 2x2, for every rendered (corner) index', () => {
+    for (const index of [0, 2, 6, 8]) {
+      expect(layerForSticker('F', index, '2x2', null)).toBe('F');
+      expect(layerForSticker('U', index, '2x2', 'E')).toBe('U');
+    }
+  });
+
+  it('3x3 corner tiles (both tangent coords ±1) select the face', () => {
+    for (const face of ['F', 'U', 'R'] as FaceName[]) {
+      for (const index of [0, 2, 6, 8]) {
+        expect(layerForSticker(face, index, '3x3', null)).toBe(face);
+      }
+    }
+  });
+
+  it('3x3 edge-middle tiles select the slice along the zero axis, on F/U/R', () => {
+    // Front face: top-middle (index 1) -> cubie (0,1,1), x=0 -> M.
+    expect(layerForSticker('F', 1, '3x3', null)).toBe('M');
+    // Front face: middle-left (index 3) -> cubie (-1,0,1), y=0 -> E.
+    expect(layerForSticker('F', 3, '3x3', null)).toBe('E');
+    // Front face: middle-right (index 5) -> cubie (1,0,1), y=0 -> E.
+    expect(layerForSticker('F', 5, '3x3', null)).toBe('E');
+    // Front face: bottom-middle (index 7) -> cubie (0,-1,1), x=0 -> M.
+    expect(layerForSticker('F', 7, '3x3', null)).toBe('M');
+
+    // Top face: front-middle (index 7) -> cubie (0,1,1), x=0 -> M.
+    expect(layerForSticker('U', 7, '3x3', null)).toBe('M');
+    // Top face: left-middle (index 3) -> cubie (-1,1,0), z=0 -> S.
+    expect(layerForSticker('U', 3, '3x3', null)).toBe('S');
+
+    // Right face: top-middle (index 1) -> cubie (1,1,0), z=0 -> S.
+    expect(layerForSticker('R', 1, '3x3', null)).toBe('S');
+    // Right face: middle-left (index 3) -> cubie (1,0,1), y=0 -> E.
+    expect(layerForSticker('R', 3, '3x3', null)).toBe('E');
+  });
+
+  it('the centre tile picks a deterministic slice first, then toggles to the other on repeat clicks', () => {
+    // F's centre sits between M (x=0) and E (y=0); x is tangent to F, so M wins first.
+    expect(layerForSticker('F', 4, '3x3', null)).toBe('M');
+    expect(layerForSticker('F', 4, '3x3', 'M')).toBe('E');
+    expect(layerForSticker('F', 4, '3x3', 'E')).toBe('M');
+    // A previous selection unrelated to this centre's two slices doesn't toggle
+    // anything odd — it just falls back to the deterministic first pick.
+    expect(layerForSticker('F', 4, '3x3', 'U')).toBe('M');
+
+    // R's centre sits between E (y=0) and S (z=0); x is NOT tangent to R, so S wins first.
+    expect(layerForSticker('R', 4, '3x3', null)).toBe('S');
+    expect(layerForSticker('R', 4, '3x3', 'S')).toBe('E');
+    expect(layerForSticker('R', 4, '3x3', 'E')).toBe('S');
   });
 });

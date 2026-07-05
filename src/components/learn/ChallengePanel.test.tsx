@@ -150,3 +150,48 @@ describe('ChallengePanel — tap vs drag discrimination', () => {
     expect(screen.getByText(/turn the front layer \(F\):/i)).toBeInTheDocument();
   });
 });
+
+describe('ChallengePanel — 3×3 sticker-level layer selection', () => {
+  const crossStage = getStageById('3x3-white-cross')!;
+
+  function frontFaceStickers() {
+    const frontFace = screen.getByRole('button', { name: /, F\)$/ });
+    return within(frontFace).getAllByTestId('cube-sticker');
+  }
+
+  it('tapping a corner tile still selects the whole face', () => {
+    render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
+    fireEvent.click(frontFaceStickers()[0]); // top-left corner
+    expect(screen.getByText(/turn the front layer \(F\):/i)).toBeInTheDocument();
+  });
+
+  it('tapping an edge-middle tile selects the slice along it, and the rail turns it', () => {
+    render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
+    // Front face, middle-left tile (index 3): y=0 -> the E (equator) slice.
+    fireEvent.click(frontFaceStickers()[3]);
+    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));
+    // The turn actually applied: selecting the same tile again still shows the
+    // E slice heading (a no-op face-turn would have reset selection to null).
+    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+  });
+
+  it('the centre tile toggles between its two slices on repeated taps', () => {
+    render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
+    const centre = () => frontFaceStickers()[4];
+    // Front face centre sits between M (x=0) and E (y=0); M wins the first tap.
+    fireEvent.click(centre());
+    expect(screen.getByText(/turn the middle slice \(M\):/i)).toBeInTheDocument();
+    fireEvent.click(centre());
+    expect(screen.getByText(/turn the equator slice \(E\):/i)).toBeInTheDocument();
+    fireEvent.click(centre());
+    expect(screen.getByText(/turn the middle slice \(M\):/i)).toBeInTheDocument();
+  });
+
+  it('no whitish selected-face veil is applied for a slice selection', () => {
+    const { container } = render(<ChallengePanel stage={crossStage} hintLevel={0} onGoalMet={() => {}} />);
+    fireEvent.click(frontFaceStickers()[3]); // selects the E slice
+    expect(container.querySelector('.selected-face')).not.toBeInTheDocument();
+  });
+});

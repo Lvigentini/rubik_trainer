@@ -19,6 +19,22 @@ export const FACE_LAYER_WORD: Record<FaceName, string> = {
 
 export type SliceFace = 'M' | 'E' | 'S';
 
+/** A selectable turn layer: either a whole face (2×2 always, 3×3 corner
+ * tiles) or a 3×3 middle slice (M/E/S, reached by tapping an edge-middle or
+ * centre tile). */
+export type LayerId = FaceName | SliceFace;
+
+/** Plain-word name for a middle slice — the slice equivalent of FACE_LAYER_WORD. */
+export const SLICE_LAYER_WORD: Record<SliceFace, string> = {
+  M: 'middle slice',
+  E: 'equator slice',
+  S: 'standing slice',
+};
+
+export function isSliceFace(layer: LayerId): layer is SliceFace {
+  return layer === 'M' || layer === 'E' || layer === 'S';
+}
+
 type Axis = 'x' | 'y' | 'z';
 
 /** Mirrors cube.ts's (unexported) BASE_FACES.positions — the (row, col) ->
@@ -65,21 +81,56 @@ function coordOnAxis(coords: [number, number, number], axis: Axis): number {
   return axis === 'x' ? coords[0] : axis === 'y' ? coords[1] : coords[2];
 }
 
-/** True if the sticker at (face, index) belongs to the layer that turning
- * `turnFace` grabs — used to highlight every affected sticker across every
- * visible face when a face is tapped, on both 2×2 and 3×3. `cubeSize` is part
- * of the signature for symmetry with the sticker-index sets callers already
- * key off of; the coordinate formulas above already generalize across sizes
+/** True if the sticker at (face, index) belongs to the layer selected by
+ * `layer` — a face (grabs the whole outer layer) or a middle slice (M/E/S,
+ * 3×3 only). Used to highlight every affected sticker across every visible
+ * face when a layer is selected, on both 2×2 and 3×3. `cubeSize` is part of
+ * the signature for symmetry with the sticker-index sets callers already key
+ * off of; the coordinate formulas above already generalize across sizes
  * (2×2 only ever renders corner indices, which resolve to ±1 on every axis). */
-export function stickerInLayer(face: FaceName, index: number, turnFace: FaceName, cubeSize: CubeSizeId): boolean {
+export function stickerInLayer(face: FaceName, index: number, layer: LayerId, cubeSize: CubeSizeId): boolean {
   const indices = STICKER_INDICES_BY_SIZE[cubeSize];
   if (!indices.includes(index)) return false;
-  const { axis, layer } = FACE_LAYER[turnFace];
-  return coordOnAxis(stickerCubieCoords(face, index), axis) === layer;
+  const { axis, layer: axisLayer } = isSliceFace(layer) ? SLICE_LAYER[layer] : FACE_LAYER[layer];
+  return coordOnAxis(stickerCubieCoords(face, index), axis) === axisLayer;
 }
 
-/** Same idea for the middle slices (M/E/S, 3×3 only) — used by Play's slice row. */
-export function stickerInSlice(face: FaceName, index: number, slice: SliceFace): boolean {
-  const { axis, layer } = SLICE_LAYER[slice];
-  return coordOnAxis(stickerCubieCoords(face, index), axis) === layer;
+/** The two tangent axes of a face — the ones that vary across its 3×3 grid
+ * (the third, fixed axis is the face's own normal and is always ±1). */
+function tangentAxes(face: FaceName): [Axis, Axis] {
+  const fixed = FACE_LAYER[face].axis;
+  return (['x', 'y', 'z'] as Axis[]).filter((axis) => axis !== fixed) as [Axis, Axis];
+}
+
+const AXIS_TO_SLICE: Record<Axis, SliceFace> = { x: 'M', y: 'E', z: 'S' };
+
+/** Pure sticker → selected-layer rule for the cube itself as the layer
+ * picker (3×3): a corner tile (both tangent coords ±1) selects the whole
+ * face; an edge-middle tile (exactly one tangent coord 0) selects the slice
+ * along that line; the centre tile (both tangent coords 0) sits between two
+ * slices and toggles between them on repeated clicks. 2×2 only ever renders
+ * corner tiles, but this returns the face outright for it regardless, per
+ * the pinned "2×2 unchanged" rule. */
+export function layerForSticker(
+  face: FaceName,
+  index: number,
+  cubeSize: CubeSizeId,
+  previous: LayerId | null,
+): LayerId {
+  if (cubeSize === '2x2') return face;
+  const coords = stickerCubieCoords(face, index);
+  const [axisA, axisB] = tangentAxes(face);
+  const zeroA = coordOnAxis(coords, axisA) === 0;
+  const zeroB = coordOnAxis(coords, axisB) === 0;
+  if (!zeroA && !zeroB) return face; // corner tile
+  if (zeroA !== zeroB) return AXIS_TO_SLICE[zeroA ? axisA : axisB]; // edge-middle tile
+
+  // Centre tile: the two candidate slices are along axisA and axisB.
+  const sliceA = AXIS_TO_SLICE[axisA];
+  const sliceB = AXIS_TO_SLICE[axisB];
+  if (previous === sliceA) return sliceB;
+  if (previous === sliceB) return sliceA;
+  // Deterministic first pick: prefer M (x=0) if x is tangent to this face, else S.
+  // (x tangent here only for U/D/F/B; R/L's tangent axes are y/z, so S wins.)
+  return axisA === 'x' || axisB === 'x' ? 'M' : 'S';
 }

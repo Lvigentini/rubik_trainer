@@ -1,29 +1,36 @@
 import { useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { COLORS, COLOR_LABELS, FACE_NAMES, type FaceName } from '../../cube';
 import type { CubeSizeId } from '../../trainer';
-import { FACE_LAYER_WORD, STICKER_INDICES_BY_SIZE, stickerInLayer } from './bands';
+import { FACE_LAYER_WORD, STICKER_INDICES_BY_SIZE, stickerInLayer, type LayerId } from './bands';
 
 const DRAG_CLICK_THRESHOLD_PX = 6;
 
 /**
- * The cube itself is the layer selector: tapping any visible face selects
- * that face's turn (U/D/L/R/F/B). Turning happens elsewhere (TurnRail).
- * Dragging anywhere on the stage orbits the view (onDragRotate); a drag past
- * a small threshold swallows the click so it can't double as a face tap.
+ * The cube itself is the layer selector. Tapping a face's gaps/border (or
+ * pressing Enter/Space on it) selects that whole face's turn (U/D/L/R/F/B).
+ * On 3×3, tapping an individual sticker instead delegates to onSelectSticker
+ * — the consumer runs bands.ts's layerForSticker to decide whether that tile
+ * means the whole face (corners) or a middle slice (M/E/S, edge-middle/centre
+ * tiles), since that decision needs the previously-selected layer (for the
+ * centre tile's toggle). Turning happens elsewhere (TurnRail). Dragging
+ * anywhere on the stage orbits the view (onDragRotate); a drag past a small
+ * threshold swallows the click so it can't double as a face/sticker tap.
  */
 export function CubeView({
   grid,
   tilt,
   cubeSize,
-  selectedFace,
-  onSelectFace,
+  selectedLayer,
+  onSelectLayer,
+  onSelectSticker,
   onDragRotate,
 }: {
   grid: Record<FaceName, FaceName[]>;
   tilt: { x: number; y: number };
   cubeSize: CubeSizeId;
-  selectedFace?: FaceName | null;
-  onSelectFace?: (face: FaceName) => void;
+  selectedLayer?: LayerId | null;
+  onSelectLayer?: (face: FaceName) => void;
+  onSelectSticker?: (face: FaceName, index: number) => void;
   onDragRotate?: (dxPx: number, dyPx: number) => void;
 }) {
   const stickerIndices = STICKER_INDICES_BY_SIZE[cubeSize];
@@ -34,8 +41,15 @@ export function CubeView({
   function handleKeyDown(face: FaceName, e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onSelectFace?.(face);
+      onSelectLayer?.(face);
     }
+  }
+
+  function handleStickerClick(face: FaceName, index: number, e: MouseEvent<HTMLSpanElement>) {
+    // Stop the face div's own onClick from also firing (it would select the
+    // whole face) — the sticker tap decides the layer itself via bands.ts.
+    e.stopPropagation();
+    onSelectSticker?.(face, index);
   }
 
   function handlePointerDown(e: PointerEvent<HTMLDivElement>) {
@@ -101,21 +115,22 @@ export function CubeView({
           {FACE_NAMES.map((face) => (
             <div
               key={face}
-              className={`cube-face cube-face-${face.toLowerCase()} ${gridClass} ${selectedFace === face ? 'selected-face' : ''}`}
-              role={onSelectFace ? 'button' : undefined}
-              tabIndex={onSelectFace ? 0 : undefined}
+              className={`cube-face cube-face-${face.toLowerCase()} ${gridClass} ${selectedLayer === face ? 'selected-face' : ''}`}
+              role={onSelectLayer ? 'button' : undefined}
+              tabIndex={onSelectLayer ? 0 : undefined}
               aria-label={`Select the ${FACE_LAYER_WORD[face]} layer (${COLOR_LABELS[face].toLowerCase()}, ${face})`}
-              onClick={onSelectFace ? () => onSelectFace(face) : undefined}
-              onKeyDown={onSelectFace ? (e) => handleKeyDown(face, e) : undefined}
+              onClick={onSelectLayer ? () => onSelectLayer(face) : undefined}
+              onKeyDown={onSelectLayer ? (e) => handleKeyDown(face, e) : undefined}
             >
               {stickerIndices.map((stickerIndex) => {
                 const color = grid[face][stickerIndex];
-                const isHighlighted = Boolean(selectedFace) && stickerInLayer(face, stickerIndex, selectedFace as FaceName, cubeSize);
+                const isHighlighted = Boolean(selectedLayer) && stickerInLayer(face, stickerIndex, selectedLayer as LayerId, cubeSize);
                 return (
                   <span
                     key={`${face}-${stickerIndex}`}
                     className={`sticker ${isHighlighted ? 'highlighted' : ''}`}
                     data-testid="cube-sticker"
+                    onClick={onSelectSticker ? (e) => handleStickerClick(face, stickerIndex, e) : undefined}
                     style={{ background: COLORS[color] }}
                   />
                 );

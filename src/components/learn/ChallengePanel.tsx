@@ -12,7 +12,7 @@ import {
 } from '../../cube';
 import { CHALLENGES, demoAlgorithm, isGoalMet } from '../../challenges';
 import type { LearningStage } from '../../learningPath';
-import { FACE_LAYER_WORD } from '../cube/bands';
+import { FACE_LAYER_WORD, layerForSticker, type LayerId } from '../cube/bands';
 import { CubeView } from '../cube/CubeView';
 import { FacePicker, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
@@ -86,7 +86,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
   const [cube, setCube] = useState(() => applyAlgorithm(createSolvedCube(), challenge.setup));
   const [matched, setMatched] = useState(0);
   const [wrongTurn, setWrongTurn] = useState<Turn | null>(null);
-  const [selectedFace, setSelectedFace] = useState<FaceName | null>(null);
+  const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
   const [demoCursor, setDemoCursor] = useState<number | null>(null);
   const firedRef = useRef(false);
   const revertTimerRef = useRef<number | null>(null);
@@ -141,6 +141,10 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
     if (!viaDemo) setDemoCursor(null);
   }
 
+  function selectSticker(face: FaceName, index: number) {
+    setSelectedLayer((previous) => layerForSticker(face, index, stage.cubeSize, previous));
+  }
+
   function reset() {
     clearPendingRevert();
     setCube(applyAlgorithm(createSolvedCube(), challenge.setup));
@@ -174,7 +178,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
 
       <div className="challenge-cube">
         <div className="cube-area">
-          <TurnRail selectedFace={selectedFace} onTurn={(turn) => applyMove(turn)} />
+          <TurnRail selectedLayer={selectedLayer} onTurn={(turn) => applyMove(turn)} />
           <div className="cube-stage-shell">
             <ViewControls
               onRotateView={rotateView}
@@ -185,13 +189,14 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
               grid={grid}
               tilt={tilt}
               cubeSize={stage.cubeSize}
-              selectedFace={selectedFace}
-              onSelectFace={setSelectedFace}
+              selectedLayer={selectedLayer}
+              onSelectLayer={setSelectedLayer}
+              onSelectSticker={selectSticker}
               onDragRotate={dragRotate}
             />
           </div>
         </div>
-        <FacePicker selectedFace={selectedFace} onSelectFace={setSelectedFace} />
+        <FacePicker cubeSize={stage.cubeSize} selectedLayer={selectedLayer} onSelectLayer={setSelectedLayer} />
       </div>
 
       {isSequence && target.length > 0 && !goalMet && (
