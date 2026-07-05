@@ -1,9 +1,9 @@
 /* src/styles/play.css — Play page chrome: header, mode picker, game layout,
    metric/score cards, move history. Every selector is scoped under
    `.page-stack` (the root PracticePage already renders). The raw 3D cube box
-   (.cube-stage/.cube/.cube-face/.sticker/.band-reference-bar/.face-editor
-   family) lives in components.css — it's shared with Learn's ChallengePanel,
-   which never renders inside `.page-stack`. */
+   (.cube-stage/.cube/.cube-face/.sticker/.turn-controls/.slice-controls/
+   .face-editor family) lives in components.css — it's shared with Learn's
+   ChallengePanel, which never renders inside `.page-stack`. */
 
 .page-stack { display: grid; gap: 22px; }
 
@@ -109,16 +109,6 @@
 }
 
 .page-stack .panel-icon { color: var(--color-accent); }
-
-.page-stack .tilt-controls { display: flex; gap: 6px; }
-.page-stack .tilt-controls button {
-  min-height: 30px;
-  padding: 0 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-sunken);
-  color: var(--text-body);
-}
 
 .page-stack .mini-metrics {
   display: grid;

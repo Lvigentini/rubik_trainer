@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   type CubeState,
   type FaceGrid,
+  type FaceName,
   type Turn,
   applyAlgorithm,
   createSolvedCube,
@@ -10,9 +11,10 @@ import {
   toFaceGrid,
 } from '../../cube';
 import { CUBE_SIZES, type CubeSizeId } from '../../trainer';
-import { BAND_SELECTIONS, type BandSelection } from '../cube/bands';
-import { BandControls } from '../cube/BandControls';
+import type { SliceFace } from '../cube/bands';
 import { CubeView } from '../cube/CubeView';
+import { SliceControls, TurnControls } from '../cube/TurnControls';
+import { useCubeTilt } from '../cube/useCubeTilt';
 import { formatTime } from './formatTime';
 
 const KEYBOARD_MAP: Record<string, Turn> = {
@@ -39,8 +41,11 @@ const KEYBOARD_MAP: Record<string, Turn> = {
 const PRIME_KEYS = new Set(['U', 'R', 'F', 'D', 'L', 'B', 'M', 'E', 'S']);
 
 /**
- * The single owner of a Play cube session: cube state, band selection, move
- * history + undo/redo, the keyboard map, tilt, and scramble/reset/timer.
+ * The single owner of a Play cube session: cube state, move history +
+ * undo/redo, the keyboard map, tilt, and scramble/reset/timer. Layer/slice
+ * selection lives here too (selectedFace/selectedSlice) purely to wire
+ * CubeView + TurnControls + SliceControls — it isn't part of CubeSession
+ * since no consuming panel needs it.
  * Free Play and Solve Coach both mount one of these; Scan Coach mounts one
  * too so it can reuse the interactive cube view for importing faces. Only
  * one CubeWorkspace is ever mounted at a time (PracticePage renders exactly
@@ -59,8 +64,6 @@ export type CubeSession = {
   lastScramble: Turn[];
   /** Wall-clock time the current scramble was generated, or null before any scramble. */
   scrambleAt: number | null;
-  selectedBand: BandSelection;
-  setSelectedBand: (band: BandSelection) => void;
   applyMove: (turn: Turn) => void;
   /** Applies a batch of turns as a single history entry — used by "Finish
    * known solve" so N moves record as N moves instead of collapsing to 1
@@ -104,8 +107,9 @@ export function CubeWorkspace({
   const { history: moveHistory, cursor: historyCursor } = historyState;
   const [lastScramble, setLastScramble] = useState<Turn[]>(() => initialScramble ?? []);
   const [scrambleAt, setScrambleAt] = useState<number | null>(() => (initialScramble?.length ? Date.now() : null));
-  const [tilt, setTilt] = useState({ x: -28, y: -38 });
-  const [selectedBand, setSelectedBand] = useState<BandSelection>(BAND_SELECTIONS[0]);
+  const { tilt, rotateView, resetView } = useCubeTilt();
+  const [selectedFace, setSelectedFace] = useState<FaceName | null>(null);
+  const [selectedSlice, setSelectedSlice] = useState<SliceFace | null>(null);
   const [timerStart, setTimerStart] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [liveElapsedMs, setLiveElapsedMs] = useState(0);
@@ -202,7 +206,8 @@ export function CubeWorkspace({
   const setCubeSize = useCallback(
     (id: CubeSizeId) => {
       setSelectedCubeSizeState(id);
-      setSelectedBand(BAND_SELECTIONS[0]);
+      setSelectedFace(null);
+      setSelectedSlice(null);
       resetCube();
     },
     [resetCube],
@@ -229,8 +234,6 @@ export function CubeWorkspace({
     movesSinceScramble,
     lastScramble,
     scrambleAt,
-    selectedBand,
-    setSelectedBand,
     applyMove,
     applyMoves,
     undo,
@@ -284,25 +287,26 @@ export function CubeWorkspace({
       <section className="panel cube-panel game-cube-panel">
         <div className="panel-header">
           <h2>3D cube</h2>
-          <div className="tilt-controls">
-            <button onClick={() => setTilt((v) => ({ ...v, y: v.y - 18 }))}>↶</button>
-            <button onClick={() => setTilt({ x: -28, y: -38 })}>center</button>
-            <button onClick={() => setTilt((v) => ({ ...v, y: v.y + 18 }))}>↷</button>
-          </div>
         </div>
         <CubeView
           grid={grid}
           tilt={tilt}
           cubeSize={selectedCubeSize}
-          selectedBand={selectedBand}
-          onSelectBand={setSelectedBand}
-          onTurn={applyMove}
+          selectedFace={selectedFace}
+          onSelectFace={setSelectedFace}
         />
 
-        <BandControls
+        <TurnControls
+          selectedFace={selectedFace}
+          onTurn={applyMove}
+          onRotateView={rotateView}
+          onResetView={resetView}
+        />
+
+        <SliceControls
           cubeSize={selectedCubeSize}
-          selectedBand={selectedBand}
-          onSelectBand={setSelectedBand}
+          selectedSlice={selectedSlice}
+          onSelectSlice={setSelectedSlice}
           onTurn={applyMove}
         />
 

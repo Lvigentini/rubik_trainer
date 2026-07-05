@@ -95,16 +95,29 @@ kbd {
 
 /* --- 3D cube: geometry (sizes/perspective/translateZ/grid layout) is kept
    byte-faithful to the legacy engine — only colors/borders/shadows move
-   onto tokens. Shared by Learn's ChallengePanel and every Play mode. --- */
+   onto tokens. Shared by Learn's ChallengePanel and every Play mode.
+   .cube-stage sizes to comfortably contain the cube's rotated footprint
+   (computed for the tilt range the view-rotate buttons allow) with padding,
+   centers it, and never clips: overflow is visible and --cube-scale (applied
+   on the .cube-scene wrapper, between the perspective host and the rotating
+   .cube) shrinks the whole scene at narrow widths instead of cropping it. */
 .cube-stage {
   position: relative;
-  height: 360px;
+  min-height: 320px;
+  width: 100%;
   display: grid;
   place-items: center;
+  padding: 24px 12px;
   perspective: 900px;
-  overflow: hidden;
+  overflow: visible;
   border-radius: var(--radius-lg);
   background: linear-gradient(145deg, var(--surface-sunken), var(--surface-page));
+}
+
+.cube-scene {
+  --cube-scale: 1;
+  transform: scale(var(--cube-scale));
+  transform-style: preserve-3d;
 }
 
 .cube {
@@ -134,6 +147,12 @@ kbd {
     0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
+.cube-face:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-raised) 80%, transparent),
+    0 0 0 3px var(--color-accent);
+}
+
 .cube-face.selected-face {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-raised) 80%, transparent),
     0 0 0 4px color-mix(in srgb, var(--color-accent) 45%, transparent);
@@ -157,85 +176,17 @@ kbd {
     0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
+/* Highlights every sticker in the turning layer, on every face — computed
+   geometrically (bands.ts's stickerInLayer), not a misaligned overlay. */
 .sticker.highlighted {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent),
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 65%, transparent),
     inset 0 0 10px color-mix(in srgb, var(--surface-raised) 45%, transparent);
   transform: scale(1.08);
   z-index: 1;
 }
 
-.cube-layer-grabbers {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.layer-grabber {
-  position: absolute;
-  pointer-events: auto;
-  min-height: 0;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
-  cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease;
-}
-
-.layer-grabber:hover,
-.layer-grabber.selected {
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-accent) 55%, transparent);
-}
-
-.row-grabber { left: 22%; width: 56%; height: 14%; }
-.row-grabber.top-row { top: 22%; }
-.row-grabber.middle-row { top: 43%; height: 14%; }
-.row-grabber.bottom-row { top: 64%; }
-
-.col-grabber { top: 22%; width: 14%; height: 56%; }
-.col-grabber.left-column { left: 22%; }
-.col-grabber.middle-column { left: 43%; width: 14%; }
-.col-grabber.right-column { left: 64%; }
-
-.cube-rotate-arrows {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  gap: 8px;
-  pointer-events: auto;
-}
-
-.cube-arrow {
-  width: 38px;
-  height: 38px;
-  min-height: 0;
-  min-width: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
-  color: var(--text-strong);
-  font-size: 1.1rem;
-  font-weight: 800;
-  box-shadow: var(--shadow-card);
-}
-
-.cube-arrow:hover {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-raised));
-  color: var(--color-accent);
-  transform: scale(1.08);
-}
-
 @media (max-width: 680px) {
-  .cube-stage { height: 300px; }
+  .cube-stage { min-height: 260px; padding: 20px 10px; }
   .cube { width: 120px; height: 120px; }
   .cube-face-u { transform: rotateX(90deg) translateZ(60px); }
   .cube-face-r { transform: rotateY(90deg) translateZ(60px); }
@@ -245,33 +196,137 @@ kbd {
   .cube-face-b { transform: rotateY(180deg) translateZ(60px); }
 }
 
-/* --- Band reference bar: layer-select + turn controls under the cube --- */
-.band-reference-bar {
+@media (max-width: 420px) {
+  .cube-stage { min-height: 220px; padding: 16px 8px; }
+  .cube-scene { --cube-scale: 0.82; }
+}
+
+/* --- Turn controls: the fixed, labeled strip below the cube. Selection
+   comes from tapping the cube itself; this only turns whatever is selected,
+   plus the (visually distinct, muted) view-rotate buttons. --- */
+.turn-controls {
+  width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   margin-top: 12px;
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   border: 1px solid var(--border-soft);
 }
 
-.band-reference-labels,
-.band-reference-arrows {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.turn-controls-heading {
+  margin: 0;
+  color: var(--text-strong);
+  font-weight: 700;
 }
 
-.band-reference-labels button,
-.band-reference-arrows button {
+.turn-controls-hint {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.turn-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.turn-btn {
+  min-width: 56px;
+  min-height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text-strong);
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.turn-btn span {
+  font-size: 1.15rem;
+  font-family: inherit;
+}
+
+.turn-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-raised));
+  color: var(--color-accent);
+}
+
+.turn-btn-compact {
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.view-rotate-controls {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.view-rotate-controls button {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
+.view-rotate-controls button:hover {
+  border-color: var(--text-muted);
+  background: var(--surface-raised);
+  color: var(--text-body);
+}
+
+@media (max-width: 680px) {
+  .turn-controls { flex-direction: column; align-items: stretch; }
+  .view-rotate-controls { margin-left: 0; justify-content: center; }
+}
+
+/* --- Play-only slice row (M/E/S, 3×3 only) --- */
+.slice-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-soft);
+}
+
+.slice-controls-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.slice-group {
+  display: flex;
+  gap: 4px;
+}
+
+.slice-select {
   min-width: 32px;
   min-height: 32px;
   padding: 0 8px;
-  display: grid;
-  place-items: center;
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
@@ -281,20 +336,114 @@ kbd {
   box-shadow: none;
 }
 
-.band-reference-labels button.selected {
+.slice-select.selected {
   border-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 16%, var(--surface-raised));
   color: var(--color-accent);
 }
 
-.band-reference-arrows button:hover {
+/* --- Learn coaching: sequence chips + coach line + how-to strip --- */
+.how-to-strip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-sunken));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--border-soft));
+}
+
+.how-to-strip p {
+  margin: 0;
+  color: var(--text-body);
+  line-height: 1.55;
+}
+
+.how-to-dismiss {
+  flex: none;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.how-to-dismiss:hover {
   border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-raised));
   color: var(--color-accent);
 }
 
-@media (max-width: 680px) {
-  .band-reference-bar { flex-direction: column; align-items: stretch; }
+.sequence-coach {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sequence-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sequence-chip {
+  min-width: 34px;
+  padding: 6px 10px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+}
+
+.sequence-chip.done {
+  background: color-mix(in srgb, var(--color-success) 22%, var(--surface-raised));
+  border-color: var(--color-success);
+  color: var(--text-strong);
+}
+
+.sequence-chip.active {
+  background: color-mix(in srgb, var(--color-accent) 18%, var(--surface-raised));
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: scale(1.08);
+}
+
+.coach-line {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-soft);
+  color: var(--text-body);
+  font-weight: 600;
+}
+
+.coach-line-wrong {
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--surface-raised));
+  border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+  color: var(--text-strong);
+}
+
+.demo-step {
+  display: grid;
+  gap: 6px;
+}
+
+.demo-words-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 /* --- Scan Coach face editors: palette, per-face grids, warnings --- */
@@ -501,8 +650,14 @@ kbd {
   button,
   .cube,
   .cube-face,
-  .layer-grabber,
   .video-reference-card {
     transition: none;
+  }
+
+  /* Wrong-move revert: the state change itself still happens (see
+     ChallengePanel's 300ms timer), but no flash/scale animation plays —
+     chips and the coach line just update instantly. */
+  .sequence-chip.active {
+    transform: none;
   }
 }

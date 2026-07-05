@@ -1,45 +1,63 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getStageById } from '../../learningPath';
 import { ChallengePanel } from './ChallengePanel';
-import type { Turn } from '../../cube';
+import type { FaceName, Turn } from '../../cube';
 
-/** Click the band + arrow that performs `turn` (outer turns only). */
+/** Tap the face button (by its geometric aria-label, e.g. "Select the top
+ * layer (white, U)") then the matching turn button in the strip below. */
+function selectFace(face: FaceName) {
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`, ${face}\\)$`) }));
+}
+
 function performTurn(turn: Turn) {
-  const bar = within(screen.getByTestId('band-reference-bar'));
-  const bandLabel: Record<string, RegExp> = {
-    U: /top row/i, D: /bottom row/i, L: /left column/i,
-    R: /right column/i, F: /front layer/i, B: /back layer/i,
-  };
-  fireEvent.click(bar.getByRole('button', { name: bandLabel[turn[0]] }));
+  selectFace(turn[0] as FaceName);
   const arrow = turn.endsWith("'")
     ? /counter-clockwise/i
     : turn.endsWith('2')
       ? /180 degrees/i
       : /turn selected layer clockwise$/i;
-  fireEvent.click(bar.getByRole('button', { name: arrow }));
+  fireEvent.click(screen.getByRole('button', { name: arrow }));
 }
 
 const sequenceStage = getStageById('2x2-orientation')!;
 
 describe('ChallengePanel — sequence goal', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('tracks progress through the target moves and fires onGoalMet once', () => {
     const onGoalMet = vi.fn();
     render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={onGoalMet} />);
-    expect(screen.getByText('0 / 6')).toBeInTheDocument();
+    expect(screen.getByTestId('sequence-coach')).toHaveTextContent(/next: u —/i);
     for (const turn of ['U', 'R', 'F', "F'", "R'", "U'"] as Turn[]) performTurn(turn);
     expect(onGoalMet).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/challenge complete/i)).toBeInTheDocument();
   });
 
-  it('a wrong move resets sequence progress', () => {
+  it('a wrong move applies then auto-reverts, keeping progress unchanged', () => {
     const onGoalMet = vi.fn();
     render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={onGoalMet} />);
     performTurn('U');
-    expect(screen.getByText('1 / 6')).toBeInTheDocument();
+    expect(screen.getAllByText('✓')).toHaveLength(1);
+    expect(screen.getByTestId('sequence-coach')).toHaveTextContent(/next: r —/i);
+
     performTurn('D');
-    expect(screen.getByText('0 / 6')).toBeInTheDocument();
+    expect(screen.getByText(/that was d — we need r next/i)).toBeInTheDocument();
+    // Progress unchanged: still exactly one completed chip (U), not reset to zero.
+    expect(screen.getAllByText('✓')).toHaveLength(1);
     expect(onGoalMet).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(screen.queryByText(/that was d/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId('sequence-coach')).toHaveTextContent(/next: r —/i);
   });
 
   it('reset clears progress and re-arms onGoalMet', () => {
@@ -47,7 +65,7 @@ describe('ChallengePanel — sequence goal', () => {
     render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={onGoalMet} />);
     for (const turn of ['U', 'R', 'F', "F'", "R'", "U'"] as Turn[]) performTurn(turn);
     fireEvent.click(screen.getByRole('button', { name: /reset challenge/i }));
-    expect(screen.getByText('0 / 6')).toBeInTheDocument();
+    expect(screen.getByTestId('sequence-coach')).toHaveTextContent(/next: u —/i);
     for (const turn of ['U', 'R', 'F', "F'", "R'", "U'"] as Turn[]) performTurn(turn);
     expect(onGoalMet).toHaveBeenCalledTimes(2);
   });
@@ -67,10 +85,26 @@ describe('ChallengePanel — state goal with demo', () => {
     expect(screen.getByText(/challenge complete/i)).toBeInTheDocument();
   });
 
+  it('shows the next demo move in words alongside the button', () => {
+    render(<ChallengePanel stage={stateStage} hintLevel={3} onGoalMet={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /reset & watch/i }));
+    expect(screen.getByText(/next move: .* — (top|bottom|left|right|front|back) layer,/i)).toBeInTheDocument();
+  });
+
   it('hides demo stepping after a manual move until reset', () => {
     render(<ChallengePanel stage={stateStage} hintLevel={3} onGoalMet={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /reset & watch/i }));
     performTurn('U');
     expect(screen.queryByRole('button', { name: /next move/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('ChallengePanel — first-time guidance strip', () => {
+  it('shows the how-to-move strip and can be dismissed', () => {
+    render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    const strip = within(screen.getByTestId('how-to-strip'));
+    expect(strip.getByText(/tap a face to grab its layer/i)).toBeInTheDocument();
+    fireEvent.click(strip.getByRole('button', { name: /dismiss how-to-move guidance/i }));
+    expect(screen.queryByTestId('how-to-strip')).not.toBeInTheDocument();
   });
 });

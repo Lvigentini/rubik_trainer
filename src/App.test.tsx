@@ -141,24 +141,18 @@ describe('Play page — modes on the URL, honest scoring', () => {
     renderApp(['/play/free']);
   }
 
-  const BAND_LABEL_BY_FACE: Record<string, RegExp> = {
-    U: /top row/i,
-    D: /bottom row/i,
-    L: /left column/i,
-    R: /right column/i,
-    F: /front layer/i,
-    B: /back layer/i,
-  };
+  function selectFace(face: string) {
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`, ${face}\\)$`) }));
+  }
 
   function performTurn(turn: Turn) {
-    const bar = within(screen.getByTestId('band-reference-bar'));
-    fireEvent.click(bar.getByRole('button', { name: BAND_LABEL_BY_FACE[turn[0]] }));
+    selectFace(turn[0]);
     if (turn.endsWith('2')) {
-      fireEvent.click(bar.getByRole('button', { name: /turn selected layer 180 degrees/i }));
+      fireEvent.click(screen.getByRole('button', { name: /turn selected layer 180 degrees/i }));
     } else if (turn.endsWith("'")) {
-      fireEvent.click(bar.getByRole('button', { name: /counter-clockwise/i }));
+      fireEvent.click(screen.getByRole('button', { name: /counter-clockwise/i }));
     } else {
-      fireEvent.click(bar.getByRole('button', { name: /turn selected layer clockwise$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /turn selected layer clockwise$/i }));
     }
   }
 
@@ -172,9 +166,11 @@ describe('Play page — modes on the URL, honest scoring', () => {
 
     expect(screen.getByRole('heading', { name: '3D cube' })).toBeInTheDocument();
     expect(screen.getByText('Game mode')).toBeInTheDocument();
-    expect(screen.getByTestId('band-reference-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('turn-controls')).toBeInTheDocument();
+    expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
+    // 2×2 is the default Play cube size — no slice row (3×3-only feature).
+    expect(screen.queryByTestId('slice-controls')).not.toBeInTheDocument();
     expect(screen.queryByText(/notation shortcut controls/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /U face/i })).not.toBeInTheDocument();
   });
 
   it('mode picker navigates via the URL and keeps ?skill=', () => {
@@ -246,31 +242,27 @@ describe('Play page — modes on the URL, honest scoring', () => {
     expect(scoped.getByText(/incomplete/i)).toBeInTheDocument();
   });
 
-  it('lets 3x3 learners select a middle row band and turn it as E', () => {
+  it('lets 3x3 players select the E slice from the Play-only slice row and turn it', () => {
     navigateToPlay();
 
     fireEvent.click(screen.getByRole('button', { name: /3×3 Classic Cube/i }));
-    const referenceBar = within(screen.getByTestId('band-reference-bar'));
-    fireEvent.click(referenceBar.getByRole('button', { name: /middle row/i }));
-    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+    const sliceRow = within(screen.getByTestId('slice-controls'));
+    fireEvent.click(sliceRow.getByRole('button', { name: /select the e slice/i }));
+    fireEvent.click(sliceRow.getByRole('button', { name: /turn e slice clockwise/i }));
 
     const history = within(screen.getByTestId('move-history'));
     expect(history.getByText('E')).toBeInTheDocument();
   });
 
-  it('trims redo history when a new band move is made after undo', () => {
+  it('trims redo history when a new face-turn move is made after undo', () => {
     navigateToPlay();
 
-    const referenceBar = within(screen.getByTestId('band-reference-bar'));
-    fireEvent.click(referenceBar.getByRole('button', { name: /right column/i }));
-    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
-    fireEvent.click(referenceBar.getByRole('button', { name: /top row/i }));
-    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+    performTurn('R');
+    performTurn('U');
 
     fireEvent.click(screen.getByRole('button', { name: /undo/i }));
 
-    fireEvent.click(referenceBar.getByRole('button', { name: /front layer/i }));
-    fireEvent.click(referenceBar.getByRole('button', { name: /turn selected layer clockwise/i }));
+    performTurn('F');
 
     const history = within(screen.getByTestId('move-history'));
     expect(history.getByText('R')).toBeInTheDocument();
@@ -315,14 +307,9 @@ describe('Routing shell', () => {
 });
 
 describe('Learn journey integration — key, unlock, and chip seams', () => {
-  const BAND_LABEL_BY_FACE: Record<string, RegExp> = {
-    U: /top row/i, R: /right column/i, F: /front layer/i,
-  };
-
   function performTurn(turn: Turn) {
-    const bar = within(screen.getByTestId('band-reference-bar'));
-    fireEvent.click(bar.getByRole('button', { name: BAND_LABEL_BY_FACE[turn[0]] }));
-    fireEvent.click(bar.getByRole('button', {
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`, ${turn[0]}\\)$`) }));
+    fireEvent.click(screen.getByRole('button', {
       name: turn.endsWith("'") ? /counter-clockwise/i : /turn selected layer clockwise$/i,
     }));
   }

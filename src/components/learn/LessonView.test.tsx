@@ -10,12 +10,8 @@ import type { Turn } from '../../cube';
 const stage = getStageById('2x2-orientation')!;
 
 function performTurn(turn: Turn) {
-  const bar = within(screen.getByTestId('band-reference-bar'));
-  const bandLabel: Record<string, RegExp> = {
-    U: /top row/i, R: /right column/i, F: /front layer/i,
-  };
-  fireEvent.click(bar.getByRole('button', { name: bandLabel[turn[0]] }));
-  fireEvent.click(bar.getByRole('button', {
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`, ${turn[0]}\\)$`) }));
+  fireEvent.click(screen.getByRole('button', {
     name: turn.endsWith("'") ? /counter-clockwise/i : /turn selected layer clockwise$/i,
   }));
 }

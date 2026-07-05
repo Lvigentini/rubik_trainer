@@ -1,4 +1,4 @@
-import type { Turn } from '../../cube';
+import type { FaceName } from '../../cube';
 import type { CubeSizeId } from '../../trainer';
 
 export const STICKER_INDICES_BY_SIZE: Record<CubeSizeId, number[]> = {
@@ -6,39 +6,80 @@ export const STICKER_INDICES_BY_SIZE: Record<CubeSizeId, number[]> = {
   '3x3': [0, 1, 2, 3, 4, 5, 6, 7, 8],
 };
 
-export type BandTurn = 'U' | 'E' | 'D' | 'L' | 'M' | 'R' | 'F' | 'S' | 'B';
-export type BandSelection = {
-  id: string;
-  label: string;
-  description: string;
-  turn: BandTurn;
-  requires3x3?: boolean;
+/** Plain-word name for the layer a face turn grabs — used in the turn strip
+ * heading and coach copy so beginners aren't stuck decoding bare letters. */
+export const FACE_LAYER_WORD: Record<FaceName, string> = {
+  U: 'top',
+  D: 'bottom',
+  L: 'left',
+  R: 'right',
+  F: 'front',
+  B: 'back',
 };
 
-export const BAND_SELECTIONS: BandSelection[] = [
-  { id: 'top-row', label: 'Top row', description: 'Grab the upper horizontal layer', turn: 'U' },
-  { id: 'middle-row', label: 'Middle row', description: 'Grab the equator row through the cube', turn: 'E', requires3x3: true },
-  { id: 'bottom-row', label: 'Bottom row', description: 'Grab the lower horizontal layer', turn: 'D' },
-  { id: 'left-column', label: 'Left column', description: 'Grab the left vertical layer', turn: 'L' },
-  { id: 'middle-column', label: 'Middle column', description: 'Grab the centre vertical slice', turn: 'M', requires3x3: true },
-  { id: 'right-column', label: 'Right column', description: 'Grab the right vertical layer', turn: 'R' },
-  { id: 'front-layer', label: 'Front layer', description: 'Twist the face nearest you', turn: 'F' },
-  { id: 'standing-slice', label: 'Standing slice', description: 'Twist the slice behind the front face', turn: 'S', requires3x3: true },
-  { id: 'back-layer', label: 'Back layer', description: 'Twist the far back face', turn: 'B' },
-];
+export type SliceFace = 'M' | 'E' | 'S';
 
-export function getTurnForBand(band: BandSelection, suffix: '' | "'" | '2'): Turn {
-  return `${band.turn}${suffix || ''}` as Turn;
+type Axis = 'x' | 'y' | 'z';
+
+/** Mirrors cube.ts's (unexported) BASE_FACES.positions — the (row, col) ->
+ * cubie coordinate formula for each face. Kept in lockstep by hand rather
+ * than imported so src/cube.ts stays untouched; cube.test.ts / trainer.test.ts
+ * exercise the real engine, and bands.test.ts below cross-checks this copy
+ * against known turn outcomes. */
+const FACE_POSITIONS: Record<FaceName, (row: number, col: number) => [number, number, number]> = {
+  U: (row, col) => [col - 1, 1, row - 1],
+  R: (row, col) => [1, 1 - row, 1 - col],
+  F: (row, col) => [col - 1, 1 - row, 1],
+  D: (row, col) => [col - 1, -1, 1 - row],
+  L: (row, col) => [-1, 1 - row, col - 1],
+  B: (row, col) => [1 - col, 1 - row, -1],
+};
+
+/** Mirrors cube.ts's (unexported) TURN_AXIS — which axis/layer a face turn grabs. */
+const FACE_LAYER: Record<FaceName, { axis: Axis; layer: -1 | 1 }> = {
+  U: { axis: 'y', layer: 1 },
+  D: { axis: 'y', layer: -1 },
+  R: { axis: 'x', layer: 1 },
+  L: { axis: 'x', layer: -1 },
+  F: { axis: 'z', layer: 1 },
+  B: { axis: 'z', layer: -1 },
+};
+
+/** Mirrors cube.ts's (unexported) SLICE_AXIS — the middle-layer slices (3×3 only). */
+const SLICE_LAYER: Record<SliceFace, { axis: Axis; layer: 0 }> = {
+  M: { axis: 'x', layer: 0 },
+  E: { axis: 'y', layer: 0 },
+  S: { axis: 'z', layer: 0 },
+};
+
+/** Cubie (x, y, z) coordinate of the sticker at `index` (0-8, row-major) on
+ * `face` — the same position formula createSolvedCube() uses, so highlight
+ * checks agree with how applyTurn actually moves stickers. */
+export function stickerCubieCoords(face: FaceName, index: number): [number, number, number] {
+  const row = Math.floor(index / 3);
+  const col = index % 3;
+  return FACE_POSITIONS[face](row, col);
 }
 
-export function bandStickerIndices(bandId: string, cubeSize: CubeSizeId): Set<number> {
-  const is3x3 = cubeSize === '3x3';
-  if (bandId === 'top-row') return new Set(is3x3 ? [0, 1, 2] : [0, 2]);
-  if (bandId === 'middle-row') return new Set([3, 4, 5]);
-  if (bandId === 'bottom-row') return new Set(is3x3 ? [6, 7, 8] : [6, 8]);
-  if (bandId === 'left-column') return new Set(is3x3 ? [0, 3, 6] : [0, 6]);
-  if (bandId === 'middle-column') return new Set([1, 4, 7]);
-  if (bandId === 'right-column') return new Set(is3x3 ? [2, 5, 8] : [2, 8]);
-  if (bandId === 'front-layer') return new Set(is3x3 ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [0, 2, 6, 8]);
-  return new Set();
+function coordOnAxis(coords: [number, number, number], axis: Axis): number {
+  return axis === 'x' ? coords[0] : axis === 'y' ? coords[1] : coords[2];
+}
+
+/** True if the sticker at (face, index) belongs to the layer that turning
+ * `turnFace` grabs — used to highlight every affected sticker across every
+ * visible face when a face is tapped, on both 2×2 and 3×3. `cubeSize` is part
+ * of the signature for symmetry with the sticker-index sets callers already
+ * key off of; the coordinate formulas above already generalize across sizes
+ * (2×2 only ever renders corner indices, which resolve to ±1 on every axis). */
+export function stickerInLayer(face: FaceName, index: number, turnFace: FaceName, cubeSize: CubeSizeId): boolean {
+  const indices = STICKER_INDICES_BY_SIZE[cubeSize];
+  if (!indices.includes(index)) return false;
+  const { axis, layer } = FACE_LAYER[turnFace];
+  return coordOnAxis(stickerCubieCoords(face, index), axis) === layer;
+}
+
+/** Same idea for the middle slices (M/E/S, 3×3 only) — used by Play's slice row. */
+export function stickerInSlice(face: FaceName, index: number, slice: SliceFace): boolean {
+  const { axis, layer } = SLICE_LAYER[slice];
+  return coordOnAxis(stickerCubieCoords(face, index), axis) === layer;
 }
