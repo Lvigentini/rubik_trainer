@@ -28,7 +28,7 @@ export function CubeView({
 }) {
   const stickerIndices = STICKER_INDICES_BY_SIZE[cubeSize];
   const gridClass = cubeSize === '2x2' ? 'cube-size-2x2' : 'cube-size-3x3';
-  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; total: number } | null>(null);
+  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; total: number; dragging: boolean } | null>(null);
   const suppressClickRef = useRef(false);
 
   function handleKeyDown(face: FaceName, e: KeyboardEvent<HTMLDivElement>) {
@@ -40,8 +40,11 @@ export function CubeView({
 
   function handlePointerDown(e: PointerEvent<HTMLDivElement>) {
     if (!onDragRotate || !e.isPrimary) return;
-    dragRef.current = { pointerId: e.pointerId, lastX: e.clientX, lastY: e.clientY, total: 0 };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Do NOT capture the pointer here: capturing on pointerdown retargets the
+    // release to the stage, so the gesture's click never reaches the face
+    // that was pressed and tapping a face silently stops selecting. Capture
+    // only once movement proves this is a drag (see handlePointerMove).
+    dragRef.current = { pointerId: e.pointerId, lastX: e.clientX, lastY: e.clientY, total: 0, dragging: false };
   }
 
   function handlePointerMove(e: PointerEvent<HTMLDivElement>) {
@@ -53,13 +56,17 @@ export function CubeView({
     drag.lastX = e.clientX;
     drag.lastY = e.clientY;
     drag.total += Math.abs(dx) + Math.abs(dy);
-    onDragRotate?.(dx, dy);
+    if (!drag.dragging && drag.total > DRAG_CLICK_THRESHOLD_PX) {
+      drag.dragging = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    if (drag.dragging) onDragRotate?.(dx, dy);
   }
 
   function handlePointerEnd(e: PointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    if (drag.total > DRAG_CLICK_THRESHOLD_PX) {
+    if (drag.dragging) {
       // The browser fires the gesture's click right after pointerup; eat that
       // one so an orbit drag never doubles as a face selection.
       suppressClickRef.current = true;

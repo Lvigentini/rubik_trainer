@@ -138,3 +138,15 @@ describe('ChallengePanel — drag-to-orbit', () => {
     expect(screen.getByText(/tap a face of the cube to grab its layer/i)).toBeInTheDocument();
   });
 });
+
+describe('ChallengePanel — tap vs drag discrimination', () => {
+  it('a tap with tiny movement still selects the face (no spurious click suppression)', () => {
+    render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    const stage = screen.getByLabelText(/interactive 2×2 cube preview/i);
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 100, clientY: 100, isPrimary: true });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 102, clientY: 101 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 102, clientY: 101 });
+    selectFace('F');
+    expect(screen.getByText(/turn the front layer \(F\):/i)).toBeInTheDocument();
+  });
+});
