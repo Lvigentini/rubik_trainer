@@ -99,13 +99,25 @@ describe('ChallengePanel — state goal with demo', () => {
   });
 });
 
-describe('ChallengePanel — first-time guidance strip', () => {
-  it('shows the how-to-move strip and can be dismissed', () => {
+describe('ChallengePanel — cube help popover', () => {
+  it('opens from the ? button, explains the tap-twice rule, and closes on ×', () => {
     render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
-    const strip = within(screen.getByTestId('how-to-strip'));
-    expect(strip.getByText(/tap a tile to grab its column — tap again for its row/i)).toBeInTheDocument();
-    fireEvent.click(strip.getByRole('button', { name: /dismiss how-to-move guidance/i }));
-    expect(screen.queryByTestId('how-to-strip')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('cube-help-popover')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /how to control the cube/i }));
+    const popover = within(screen.getByTestId('cube-help-popover'));
+    expect(popover.getByText(/tap it again/i)).toBeInTheDocument();
+    // Learn has no keyboard shortcuts wired — no keyboard section here.
+    expect(popover.queryByText(/keyboard/i)).not.toBeInTheDocument();
+    fireEvent.click(popover.getByRole('button', { name: /close help/i }));
+    expect(screen.queryByTestId('cube-help-popover')).not.toBeInTheDocument();
+  });
+
+  it('closes on Escape', () => {
+    render(<ChallengePanel stage={sequenceStage} hintLevel={0} onGoalMet={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /how to control the cube/i }));
+    expect(screen.getByTestId('cube-help-popover')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('cube-help-popover')).not.toBeInTheDocument();
   });
 });
 

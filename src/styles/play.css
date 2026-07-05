@@ -182,19 +182,6 @@
 }
 .page-stack .history-list span.future { opacity: 0.4; }
 
-.page-stack .keyboard-hints { margin-top: 2px; }
-.page-stack .keyboard-hints p { color: var(--text-muted); font-size: 0.82rem; line-height: 1.5; margin: 0; }
-.page-stack .keyboard-hints kbd {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-sunken);
-  font-family: ui-monospace, monospace;
-  font-weight: 700;
-  font-size: 0.78rem;
-}
-
 /* --- Practice-side cards: scramble, next move, solved/score --- */
 .page-stack .note { color: var(--text-muted); line-height: 1.55; margin: 0; }
 

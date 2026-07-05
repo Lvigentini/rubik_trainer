@@ -12,6 +12,7 @@ import {
 import { CHALLENGES, demoAlgorithm, isGoalMet } from '../../challenges';
 import type { LearningStage } from '../../learningPath';
 import { FACE_LAYER_WORD, layerForSticker, type LayerId } from '../cube/bands';
+import { CubeHelp } from '../cube/CubeHelp';
 import { CubeView } from '../cube/CubeView';
 import { FacePicker, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
@@ -62,28 +63,6 @@ function describeMove(turn: Turn): string {
 function describeMoveWords(turn: Turn): string {
   const { face, suffix } = splitTurn(turn);
   return `${FACE_LAYER_WORD[face]} layer, ${DIRECTION_WORD[suffix]}`;
-}
-
-function HowToStrip() {
-  const [dismissed, setDismissed] = useState(false);
-  if (dismissed) return null;
-  return (
-    <div className="how-to-strip" data-testid="how-to-strip">
-      <p>
-        <strong>How to move the cube:</strong> ① tap a tile to grab its column — tap again for its row
-        ② turn it with the big arrow buttons ③ drag around the cube to spin your view.
-        Letters like U and R′ are cube notation — you&rsquo;ll learn them as you go.
-      </p>
-      <button
-        type="button"
-        className="how-to-dismiss"
-        aria-label="Dismiss how-to-move guidance"
-        onClick={() => setDismissed(true)}
-      >
-        ×
-      </button>
-    </div>
-  );
 }
 
 export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
@@ -182,7 +161,6 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
 
   return (
     <section className={`challenge-panel${goalMet ? ' goal-met' : ''}`} data-testid="challenge-panel">
-      <HowToStrip />
       <header className="challenge-header">
         <p className="eyebrow">Try it first</p>
         <p className="challenge-goal-text">{challenge.goalText}</p>
@@ -192,6 +170,7 @@ export function ChallengePanel({ stage, hintLevel, onGoalMet }: Props) {
         <div className="cube-area">
           <TurnRail selectedLayer={selectedLayer} onTurn={(turn) => applyMove(turn)} />
           <div className="cube-stage-shell">
+            <CubeHelp />
             <ViewControls
               onRotateView={rotateView}
               onRotateViewVertical={rotateViewVertical}

@@ -12,6 +12,7 @@ import {
 } from '../../cube';
 import { CUBE_SIZES, type CubeSizeId } from '../../trainer';
 import { layerForSticker, type LayerId } from '../cube/bands';
+import { CubeHelp } from '../cube/CubeHelp';
 import { CubeView } from '../cube/CubeView';
 import { FacePicker, TurnRail, ViewControls } from '../cube/TurnControls';
 import { useCubeTilt } from '../cube/useCubeTilt';
@@ -296,6 +297,7 @@ export function CubeWorkspace({
         <div className="cube-area">
           <TurnRail selectedLayer={selectedLayer} onTurn={applyMove} />
           <div className="cube-stage-shell">
+            <CubeHelp showKeyboard />
             <ViewControls
               onRotateView={rotateView}
               onRotateViewVertical={rotateViewVertical}
@@ -339,14 +341,6 @@ export function CubeWorkspace({
           </div>
         </div>
 
-        <div className="keyboard-hints">
-          <span className="field-label">Keyboard</span>
-          <p>
-            Press <kbd>U</kbd> <kbd>R</kbd> <kbd>F</kbd> <kbd>D</kbd> <kbd>L</kbd> <kbd>B</kbd> for clockwise, <kbd>Shift</kbd> + key for prime.
-            <br />
-            <kbd>Ctrl</kbd> + <kbd>Z</kbd> undo, <kbd>Ctrl</kbd> + <kbd>Y</kbd> redo.
-          </p>
-        </div>
       </section>
 
       {children(session)}

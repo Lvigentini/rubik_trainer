@@ -403,29 +403,65 @@ kbd {
   .turn-controls-hint { width: 100%; text-align: center; max-width: none; }
 }
 
-/* --- Learn coaching: sequence chips + coach line + how-to strip --- */
-.how-to-strip {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+/* --- Cube help: "?" pinned top-left of the stage, mirroring the view
+   cluster top-right; popover opens beneath it, above the cube. --- */
+.cube-help {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+}
+
+.help-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface-raised) 82%, transparent);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.help-btn:hover,
+.help-btn[aria-expanded='true'] {
+  border-color: var(--color-accent);
+  border-style: solid;
+  color: var(--color-accent);
+  background: var(--surface-raised);
+}
+
+.help-popover {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  width: min(340px, 78vw);
+  padding: 14px 16px;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-sunken));
-  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--border-soft));
-}
-
-.how-to-strip p {
-  margin: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card-raised);
   color: var(--text-body);
-  line-height: 1.55;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  display: grid;
+  gap: 10px;
 }
 
-.how-to-dismiss {
-  flex: none;
-  min-width: 28px;
-  min-height: 28px;
+.help-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-strong);
+}
+
+.help-close {
+  min-width: 26px;
+  min-height: 26px;
   padding: 0;
   border-radius: 50%;
   background: transparent;
@@ -434,10 +470,34 @@ kbd {
   box-shadow: none;
 }
 
-.how-to-dismiss:hover {
+.help-close:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
+
+.help-popover h4 {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.help-popover ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.help-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* --- Learn coaching: sequence chips + coach line --- */
 
 .sequence-coach {
   display: grid;
