@@ -53,29 +53,39 @@ describe('InMemoryProgressStore — lessons', () => {
   });
 });
 
-describe('InMemoryProgressStore — streak', () => {
+describe('InMemoryProgressStore — streak (LOCAL calendar days)', () => {
+  // Streak dates deliberately have no Z suffix: they parse as LOCAL time, so
+  // these tests pin the local-calendar-day rule and pass in every timezone.
   it('first activity starts the streak at 1', () => {
-    const { store } = makeStore();
+    const { store } = makeStore('2026-07-04T10:00:00');
     store.completeLesson('2x2-orientation', 3, 0);
     expect(store.getSnapshot().streak).toMatchObject({ current: 1, best: 1, lastActiveDate: '2026-07-04' });
   });
 
   it('consecutive-day activity increments; same-day does not', () => {
-    const { store, setDate } = makeStore();
+    const { store, setDate } = makeStore('2026-07-04T10:00:00');
     store.completeLesson('2x2-orientation', 3, 0);
     store.completeLesson('2x2-first-face', 3, 0); // same day
     expect(store.getSnapshot().streak.current).toBe(1);
-    setDate('2026-07-05T09:00:00Z');
+    setDate('2026-07-05T09:00:00');
     store.completeLesson('2x2-corner-insertion', 3, 0);
     expect(store.getSnapshot().streak).toMatchObject({ current: 2, best: 2 });
   });
 
-  it('a gap of one or more days resets the streak to 1 and keeps best', () => {
-    const { store, setDate } = makeStore();
+  it('late-night then early-morning counts as consecutive local days', () => {
+    const { store, setDate } = makeStore('2026-07-04T23:30:00');
     store.completeLesson('2x2-orientation', 3, 0);
-    setDate('2026-07-05T09:00:00Z');
+    setDate('2026-07-05T00:20:00');
     store.completeLesson('2x2-first-face', 3, 0);
-    setDate('2026-07-08T09:00:00Z');
+    expect(store.getSnapshot().streak).toMatchObject({ current: 2, best: 2, lastActiveDate: '2026-07-05' });
+  });
+
+  it('a gap of one or more days resets the streak to 1 and keeps best', () => {
+    const { store, setDate } = makeStore('2026-07-04T10:00:00');
+    store.completeLesson('2x2-orientation', 3, 0);
+    setDate('2026-07-05T09:00:00');
+    store.completeLesson('2x2-first-face', 3, 0);
+    setDate('2026-07-08T09:00:00');
     store.completeLesson('2x2-corner-insertion', 3, 0);
     expect(store.getSnapshot().streak).toMatchObject({ current: 1, best: 2 });
   });

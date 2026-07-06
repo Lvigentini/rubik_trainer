@@ -186,9 +186,11 @@ the next activity. `best` is the historical maximum of `current`.
 - **Phase A (this round):** `InMemoryProgressStore` + React context/hook
   (`useProgress()` via `useSyncExternalStore`). All progress UX is real; nothing persists across
   refresh yet. The store is created at app root — swapping implementations is one line.
-- **Phase B (next):** `LocalStorageProgressStore` — same interface, JSON under a namespaced key,
-  `version` field + migration function table. Graceful handling of corrupt/missing data
-  (fall back to empty snapshot, never crash).
+- **Phase B (SHIPPED 2026-07-06):** `LocalStorageProgressStore` — same interface, JSON under
+  `rubik-trainer-progress`, `version` field + migration function table. Corrupt/missing/unknown-
+  version data falls back to an empty snapshot, never crashes; setItem failures (quota, private
+  mode) degrade silently to in-memory. Decision recorded: streak days follow the DEVICE'S LOCAL
+  calendar day (changed from UTC when streaks became persistent).
 - **Phase C (future):** remote adapter — auth + Postgres (e.g. Neon via Vercel Marketplace).
   Sync strategy: last-write-wins per lesson record; local remains the source while offline.
   Not designed in detail here; the interface and versioned schema are the contract it must fit.

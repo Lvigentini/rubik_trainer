@@ -9,19 +9,31 @@ import {
 
 const MS_PER_DAY = 86_400_000;
 
+/** Streak days follow the DEVICE'S LOCAL calendar (decided for Phase B, when
+ * streaks became persistent): a learner practising Tuesday evening and
+ * Wednesday morning by their own clock keeps the streak, regardless of UTC. */
 function isoDay(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function dayGap(fromDay: string, toDay: string): number {
+  // Day keys are calendar dates; parsing both as UTC midnights keeps the
+  // subtraction exact regardless of the local timezone or DST shifts.
   return Math.round((Date.parse(toDay) - Date.parse(fromDay)) / MS_PER_DAY);
 }
 
 export class InMemoryProgressStore implements ProgressStore {
-  private snapshot: ProgressSnapshot = emptySnapshot();
+  private snapshot: ProgressSnapshot;
   private listeners = new Set<() => void>();
 
-  constructor(private now: () => Date = () => new Date()) {}
+  constructor(
+    private now: () => Date = () => new Date(),
+    initial?: ProgressSnapshot,
+  ) {
+    this.snapshot = initial ?? emptySnapshot();
+  }
 
   getSnapshot(): ProgressSnapshot {
     return this.snapshot;
